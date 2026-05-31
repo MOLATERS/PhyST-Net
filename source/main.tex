@@ -47,20 +47,8 @@ Wind power forecasting, spatio-temporal graph neural networks, Kolmogorov-Arnold
 \label{sec:conclusion}
 This paper introduced PhyST-Net, a physics-aware differentiable spatio-temporal transformer network specifically designed for robust and reliable wind power forecasting in modern smart grids. By resolving the ``Forecasting Trilemma'' via AGSP, R-STMF, and K-AMC, we provide a tool that is both highly expressive and physically grounded. Our results across coastal, highland, and small-cluster industrial farms demonstrate that embedding physical inductive biases into high-capacity deep learning is the most effective path toward reliable renewable energy integration.
 
-\subsection{Industrial Impact and Policy Implications}
-\label{sec:policy}
-The achievement of a 96.02\% grid compliance rate has significant implications for power system policy. Our findings suggest that grid operators can significantly reduce the volume of mandatory ``Spinning Reserves'' if physics-aware forecasting is adopted as the industrial standard. This not only reduces the operational cost of the grid but also facilitates the decommissioning of coal-fired backup plants, directly supporting global decarbonization targets. 
+The achievement of a state-of-the-art grid compliance rate has significant implications for power system policy and industrial operations. Our findings suggest that grid operators can significantly reduce the volume of mandatory spinning reserves if physics-aware forecasting is adopted as the industrial standard. This not only reduces the operational cost of the grid but also facilitates the decommissioning of coal-fired backup plants, directly supporting global decarbonization targets. Furthermore, the ``Safety-First'' nature of our PI-DCH architecture provides the necessary reliability for wind farms to participate in high-frequency primary frequency regulation markets, opening up new revenue streams for farm operators and reducing the total system cost of maintaining grid frequency.
 
-Furthermore, the ``Safety-First'' nature of our PI-DCH architecture provides the necessary reliability for wind farms to participate in high-frequency primary frequency regulation markets. This opens up new revenue streams for farm operators and reduces the total system cost of maintaining grid frequency.
-
-\subsection{Societal and Environmental Impact}
-\label{sec:societal}
-The reliable integration of wind energy is a cornerstone of the global effort to combat climate change. By providing high-fidelity forecasts, PhyST-Net reduces the ``Intermittency Penalty'' associated with wind power, making it a more attractive option for large-scale investment. 
-
-The social impact of a more stable grid is equally profound. In regions with high renewable penetration, accurate WPF prevents the need for emergency load shedding, ensuring that essential services like hospitals and transport networks remain operational during extreme weather events. By bridging the gap between data-driven AI and physical reality, this work contributes to the sustainable and equitable development of the global energy infrastructure.
-
-\subsection{Limitations and Future Research Directions}
-\label{sec:limitations}
 While PhyST-Net represents a significant advancement, several avenues for future research remain open. First, the integration of multi-modal data from satellite imagery and LIDAR sensors could further enhance the spatial resolution of wake modeling. Second, the use of hybrid Graph-Mamba architectures could reduce the computational complexity for ultra-large-scale offshore mega-clusters. Finally, future work will explore the use of uncertainty-aware KANs to provide probabilistic grid-safe envelopes instead of point forecasts.
 
 \begin{thebibliography}{10}

@@ -2,7 +2,7 @@
 \addcontentsline{toc}{section}{Nomenclature}
 \begin{IEEEdescription}[\IEEEsetlabelwidth{$P_{rated}$}]
 \item[$X_t$] Time-series measurement of active power or wind speed at time $t$, derived from SCADA systems.
-\item[$L$] Temporal history horizon length (input sequence length), defining the model's look-back window.
+\item[$L$] Temporal history horizon length (input sequence length), defining the look-back window.
 \item[$N_p$] Number of differentiable patches (tokens) in the AGSP layer, representing semantic sub-series.
 \item[$\mu_i$] Learnable temporal center of the $i$-th Gaussian patch, representing the focal point of the token.
 \item[$\sigma_i$] Learnable bandwidth of the $i$-th Gaussian patch, representing the effective temporal receptive field.
@@ -11,9 +11,6 @@
 \item[$T_i$] Aggregated latent token for patch $i$, a semantically rich representation of a local atmospheric event.
 \item[$A_{near}$] Spatial graph adjacency matrix modeling localized aerodynamic wake-induced interactions.
 \item[$A_{far}$] Spatial graph adjacency matrix modeling macroscopic regional meteorological fronts.
-\item[$d_{ij}$] Geographical Euclidean distance between the hub centers of wind turbine $i$ and turbine $j$.
-\item[$\theta_{ij}$] Spatial orientation angle (bearing) from turbine $j$ to turbine $i$ in the local coordinate system.
-\item[$\Phi_{wind}$] Real-time prevailing wind direction angle, critical for modeling anisotropic wake deficits.
 \item[$P_{rated}$] Maximum rated mechanical capacity of the wind turbine generator as per the nameplate spec.
 \item[$\Lambda$] Grid compliance metric, defined as the percentage of forecasts within regulatory tolerance.
 \item[$Z_{nwp}$] Multi-variate atmospheric features from Numerical Weather Prediction models (e.g., speed, temp, pressure).
@@ -22,18 +19,5 @@
 \item[$\tau$] Sharpness (temperature) parameter governing the slope of the physical capping barrier function.
 \item[$K_{near}$] Neighborhood size for localized spatial coupling in the Seasonal wake-modeling branch.
 \item[$K_{far}$] Neighborhood size for synoptic-scale spatial coupling in the Trend meteorological branch.
-\item[$\epsilon, \delta$] Numerical stability constants to prevent division-by-zero during weighting and normalization.
 \item[$\lambda$] Residual scaling factor for the K-AMC physics injection layer.
-\item[$\rho$] Air density ($\text{kg/m}^3$), a critical variable in the power-velocity cubic relationship.
-\item[$A$] Swept area of the turbine rotor ($\text{m}^2$), defining the energy extraction potential.
-\item[$v$] Free-stream wind velocity measured at hub height (m/s).
-\item[$\eta$] Combined electrical and mechanical efficiency of the drivetrain and generator.
-\item[$C_p$] Power coefficient, representing the percentage of kinetic energy extracted from the wind.
-\item[$\lambda_{ts}$] Tip-speed ratio, defining the operational point of the turbine relative to wind speed.
-\item[$\beta_p$] Blade pitch angle, used for active power control and mechanical braking.
-\item[$RPM$] Rotational speed of the generator/high-speed shaft (revolutions per minute).
-\item[$V_{terminal}$] Terminal voltage at the turbine's step-up transformer (V).
-\item[$f_{grid}$] Instantaneous grid frequency (Hz).
-\item[$Q$] Reactive power generated or consumed by the power electronics converter (kVAr).
-\item[$S$] Apparent power manifold defining the thermal limits of the electrical components.
 \end{IEEEdescription}

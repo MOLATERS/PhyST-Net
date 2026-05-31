@@ -4,7 +4,7 @@ To rigorously evaluate the performance and generalizability of PhyST-Net, we con
 
 \begin{figure}[!t]
 \centering
-\rule{0.48\textwidth}{0.35\textwidth}
+\rule{0.48\textwidth}{0.22\textwidth}
 \caption{Industrial Test Sites Overview. (Left) Shandong wind power forecasting (SDWPF) coastal mega-farm. (Middle) Hill of Towie (HoT) Scottish highland site with complex terrain. (Right) Kelmarsh small-scale cluster for precision stability testing.}
 \label{fig:sites_overview}
 \end{figure}
@@ -27,7 +27,7 @@ Kelmarsh, located in Northamptonshire, UK, is a smaller-scale farm with 6 Senvio
 
 \begin{figure}[!t]
 \centering
-\rule{0.48\textwidth}{0.35\textwidth}
+\rule{0.48\textwidth}{0.22\textwidth}
 \caption{SCADA Sensor Suit Distribution. This diagram illustrates the high-dimensional input manifold, covering meteorological, electrical, and mechanical state variables used for physics-informed forecasting.}
 \label{fig:sensors}
 \end{figure}
@@ -55,49 +55,31 @@ As shown in our benchmark results (see Table \ref{tab:nuclear_results_modular}),
 
 It is worth noting that our baselines consist primarily of state-of-the-art Transformer variants and the spatio-temporal graph baseline \textbf{GCGNet}, rather than traditional single-scale graph neural networks. This selection is deliberate: traditional spatial graph models struggle to scale to the massive node-edge combinations required by high-dimensional SCADA data in farms like SDWPF (134 turbines $\times$ 15 features). The selected baselines represent the current industrial standards for handling such high-dimensional multivariate series, making them the most rigorous benchmarks for our proposed architecture.
 
-\begin{table}[htbp]
+\begin{table*}[!t]
 \centering
+\footnotesize
 \caption{Benchmark Results: Performance comparison on industrial datasets (Ultra-Short Term). All metrics are to be populated post-experiment.}
 \label{tab:nuclear_results_modular}
-\begin{tabular}{@{}llccc@{}}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lccccccccc}
 \toprule
-\textbf{Dataset} & \textbf{Model} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} \\
+\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c}{\textbf{Kelmarsh}} & \multicolumn{3}{c}{\textbf{SDWPF}} & \multicolumn{3}{c}{\textbf{HoT}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+ & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} \\
 \midrule
-\multirow{10}{*}{Kelmarsh} & GBDT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & DLinear & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Baseline (Transformer) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Informer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Autoformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & FEDformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & PatchTST & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & iTransformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & GCGNet & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & \textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-\midrule
-\multirow{10}{*}{SDWPF} & GBDT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & DLinear & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Baseline (Transformer) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Informer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Autoformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & FEDformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & PatchTST & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & iTransformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & GCGNet & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & \textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-\midrule
-\multirow{10}{*}{HoT} & GBDT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & DLinear & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Baseline (Transformer) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Informer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & Autoformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & FEDformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & PatchTST & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & iTransformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & GCGNet & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & \textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+GBDT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+DLinear & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+Baseline (Transformer) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+Informer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+Autoformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+FEDformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+PatchTST & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+iTransformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+GCGNet & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+\textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Hyperparameter Robustness and Computational Overhead}
 \label{sec:hyperparams}
@@ -115,31 +97,23 @@ To verify the contribution of each individual innovation, we conducted a rigorou
     \item \textbf{w/o PI-DCH}: Removing the physical projection layer reduced grid compliance ($\Lambda$) by \textbf{TBD}\%, demonstrating that black-box models inherently struggle with mechanical boundaries.
 \end{itemize}
 
-\begin{table}[htbp]
+\begin{table*}[htbp]
 \centering
+\footnotesize
 \caption{Ablation Study: Contribution of individual PhyST-Net components across industrial datasets. All metrics are to be populated post-experiment.}
 \label{tab:ablation_results}
-\begin{tabular}{@{}llccc@{}}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lccccccccc}
 \toprule
-\textbf{Dataset} & \textbf{Configuration} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} \\
+\multirow{2}{*}{\textbf{Configuration}} & \multicolumn{3}{c}{\textbf{Kelmarsh}} & \multicolumn{3}{c}{\textbf{SDWPF}} & \multicolumn{3}{c}{\textbf{HoT}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+ & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} \\
 \midrule
-\multirow{5}{*}{Kelmarsh} & \textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o AGSP & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o R-STMF & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o K-AMC & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o PI-DCH & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-\midrule
-\multirow{5}{*}{SDWPF} & \textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o AGSP & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o R-STMF & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o K-AMC & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o PI-DCH & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-\midrule
-\multirow{5}{*}{HoT} & \textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o AGSP & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o R-STMF & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o K-AMC & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
- & w/o PI-DCH & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+\textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+w/o AGSP & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+w/o R-STMF & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+w/o K-AMC & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+w/o PI-DCH & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}

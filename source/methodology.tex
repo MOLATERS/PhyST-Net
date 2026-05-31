@@ -10,7 +10,7 @@ The complete feature extraction workflow consists of four sequential stages: (A)
 
 \begin{figure*}[!t]
 \centering
-\rule{\textwidth}{0.35\textwidth}
+\rule{\textwidth}{0.18\textwidth}
 \caption{Overall Architecture of PhyST-Net. This schematic illustrates the four-stage physical pipeline, highlighting how atmospheric uncertainty is progressively refined into physically consistent power manifold projections.}
 \label{fig:full_arch}
 \end{figure*}
@@ -24,26 +24,6 @@ A persistent challenge in deep-learning-based wind power forecasting (WPF) is th
 The fluid dynamics of the atmosphere are fundamentally continuous. A wind gust does not suddenly ``start'' at a discrete time step and ``end'' at another; it evolves as a continuous wave packet with a specific temporal envelope. Rigid patching severs this envelope, losing the phase information that resides at the patch boundaries. Furthermore, from a signal processing perspective, rigid patching is equivalent to a rectangular window filter, introducing high-frequency leakage in the spectral domain. 
 
 AGSP resolves this by treating the patching process as a differentiable, continuous operation using Gaussian soft-windows. This allows the model to ``smooth'' the transition between semantic tokens, preserving the signal's physical integrity and ensuring that the gradient manifold remains smooth during training. By using Gaussian windows, we effectively perform a localized low-pass filtering operation that is aware of the signal's non-stationarity.
-
-\begin{algorithm}[H]
-\caption{AGSP Weight Computation}
-\begin{algorithmic}[1]
-\STATE \textbf{Input:} Sequence length $L$, Patch count $N_p$
-\STATE \textbf{Output:} Differentiable weight matrix $W \in \mathbb{R}^{N_p \times L}$
-\STATE Initialize $\mu \gets \text{linspace}(0, L, N_p)$
-\STATE Initialize $\log \sigma \gets \text{zeros}(N_p)$
-\FOR{each training iteration}
-    \FOR{$i=1$ \TO $N_p$}
-        \FOR{$t=1$ \TO $L$}
-            \STATE $W_{it} \gets \exp\left( -\frac{(t-\mu_i)^2}{2\exp(\log \sigma_i)^2 + \epsilon} \right)$
-        \ENDFOR
-    \ENDFOR
-    \STATE $\tilde{W} \gets \text{Softmax}(W, \text{dim}=L)$ \COMMENT{Partition of Unity}
-    \STATE \textbf{Return} $\tilde{W}$
-\ENDFOR
-\end{algorithmic}
-\label{alg:agsp_weights}
-\end{algorithm}
 
 \subsubsection{Mathematical Formulation of AGSP}
 \label{sec:agsp_math}
@@ -70,24 +50,6 @@ This formulation allows AGSP to act as an Adaptive Low-Pass Filter. When the win
 \subsection{Multi-Scale Spatio-Temporal Reasoning (R-STMF)}
 \label{sec:rstmf}
 The spatial coupling within a wind farm is governed by the complex aerodynamics of wake effects. When a turbine operates, it extracts kinetic energy from the wind, creating a ``velocity deficit'' and increased turbulence downstream. Modeling this interaction is critical, but static distance-based graphs fail to account for the dynamic, directional nature of wind flow. Furthermore, farm-wide dynamics occur at multiple spatial scales. We propose R-STMF to explicitly decouple these scales via a dual-branch K-nearest neighbor (KNN) architecture.
-
-\begin{algorithm}[H]
-\caption{R-STMF Dual-Branch Graph Construction}
-\begin{algorithmic}[1]
-\STATE \textbf{Input:} Turbine coordinates $C$, Prevailing wind direction $\Phi_{wind}$
-\STATE \textbf{Output:} Adjacency matrices $A_{near}, A_{far}$
-\STATE $D \gets \text{PairwiseDistance}(C)$
-\STATE $\Theta \gets \text{PairwiseOrientation}(C)$
-\FOR{each turbine $i, j$}
-    \STATE $\text{WakeFactor} \gets \max(0, \cos(\Theta_{ij} - \Phi_{wind}))^n$
-    \STATE $A_{near, ij} \gets \exp(-D_{ij}^2/\kappa) \cdot \text{WakeFactor}$
-\ENDFOR
-\STATE $A_{near} \gets \text{TopK}(A_{near}, K_{near})$
-\STATE $A_{far} \gets \text{Softmax}(\text{Embeddings}^T \text{Embeddings})$
-\STATE \textbf{Return} $A_{near}, A_{far}$
-\end{algorithmic}
-\label{alg:rstmf_graphs}
-\end{algorithm}
 
 \subsubsection{Aerodynamic Disentanglement Principles}
 \label{sec:rstmf_aerodynamics}
@@ -123,19 +85,6 @@ where $G$ is a learnable fusion vector and $\sigma$ is the sigmoid function. Thi
 \label{sec:kamc}
 Numerical weather prediction (NWP) provides critical future-looking information. However, the relationship between NWP variables (wind speed, temperature, pressure) and actual power output is highly non-linear. Standard multi-layer perceptron (MLP) based feature injection often fails to capture the ``fine-grained'' physics of this mapping.
 
-\begin{algorithm}[H]
-\caption{K-AMC Non-linear Weather Modulation}
-\begin{algorithmic}[1]
-\STATE \textbf{Input:} Spatio-temporal state $H$, Weather vector $Z_{nwp}$
-\STATE \textbf{Output:} Modulated state $H_{fused}$
-\STATE $\gamma, \beta \gets \text{KAN\_EdgeLayer}(Z_{nwp})$
-\STATE $\text{Residual} \gets \gamma \odot H + \beta - H$
-\STATE $H_{fused} \gets H + \lambda \cdot \text{Residual}$ \COMMENT{Residual Scaling $\lambda=0.1$}
-\STATE \textbf{Return} $H_{fused}$
-\end{algorithmic}
-\label{alg:kamc_modulation}
-\end{algorithm}
-
 \subsubsection{Theoretical Limitation of MLPs in Physics}
 \label{sec:mlp_limits}
 Multi-layer perceptrons (MLPs) use node-based activations that tend to smear physical relationships across a dense weight matrix. For a physical system like a wind turbine, the mapping from meteorological variables to power (the power curve) is piecewise and highly non-linear. Linear or MLP-based modulation treats the entire input manifold as a continuous, smooth surface, a poor approximation for the sudden saturation effects of wind turbines at rated speed.
@@ -165,17 +114,3 @@ To enforce physical boundaries while maintaining smooth gradients for training, 
 where $L$ and $U$ are learnable offsets and $\tau$ is a temperature parameter that controls the sharpness of the transition. A known vulnerability of Sigmoid-based clipping is the risk of vanishing gradients when $\tilde{Y}$ drastically exceeds the bounds. To mitigate this saturation during backpropagation, $\tau$ is dynamically annealed during training: starting with a large value for a softer, gradient-rich landscape, and decaying towards a strict step function. Additionally, a mild $L_2$ regularization penalty on $\tilde{Y}$ ensures the pre-clipped latent manifold remains close to the operational domain.
 
 The PI-DCH ensures that the model's output manifold is strictly projected into the feasible domain $[0, P_{rated}]$. By embedding this constraint directly into the architecture, we guarantee that grid operators receive a signal that is always physically grounded and actionable. This structural regularizer prevents the generation of out-of-bound forecasts that could mislead grid dispatch algorithms, thereby maximizing grid compliance ($\Lambda$) and operational trust.
-
-\begin{algorithm}[H]
-\caption{PI-DCH Physical Capping Logic}
-\begin{algorithmic}[1]
-\STATE \textbf{Input:} Latent manifold $H$, Parameters $L, U, \tau$
-\STATE \textbf{Output:} Grid-compliant forecast $\hat{Y}$
-\STATE $\tilde{Y} \gets \text{LinearHead}(H)$
-\STATE $\text{LowerBound} \gets \sigma((\tilde{Y} - L)/\tau)$
-\STATE $\text{UpperBound} \gets \sigma((U - \tilde{Y})/\tau)$
-\STATE $\hat{Y} \gets P_{rated} \cdot \text{LowerBound} \cdot \text{UpperBound}$
-\STATE \textbf{Return} $\hat{Y} \in [0, P_{rated}]$
-\end{algorithmic}
-\label{alg:pidch_capping}
-\end{algorithm}
