@@ -1,6 +1,12 @@
 \section{Methodology}
 \label{sec:methodology}
-The PhyST-Net architecture is conceptualized as a ``Physical-Information Pipeline'' designed to transform raw, non-stationary atmospheric signals into grid-compliant power forecasts. The workflow consists of four sequential stages: (A) Adaptive Signal Tokenization via Adaptive Gaussian-soft-windowed Patching (AGSP), (B) Multi-scale Spatio-Temporal Reasoning via Relational Spatio-Temporal Manifold Fusion (R-STMF), (C) Non-linear Physics Injection via KAN-enhanced Adaptive Meteorological Conditioning (K-AMC), and (D) Feasible Domain Projection via Physics-Informed Dynamic Capping Head (PI-DCH).
+The PhyST-Net architecture is conceptualized as a ``Physical-Information Pipeline'' designed to transform raw, non-stationary atmospheric signals into grid-compliant power forecasts. Mathematically, the end-to-end mapping of the proposed pipeline is formalized as follows:
+\begin{equation}
+\hat{Y} = \text{PI-DCH} \Big( \text{K-AMC} \big( \text{R-STMF}(\text{AGSP}(X)), Z_{nwp} \big) \Big)
+\end{equation}
+where $X \in \mathbb{R}^{L \times D}$ represents the raw time-series inputs of history length $L$ and features $D$, $Z_{nwp}$ represents the multi-variate Numerical Weather Prediction (NWP) features, and $\hat{Y} \in [0, P_{rated}]^S$ denotes the final grid-safe, physically bounded wind power forecast for a look-forward horizon $S$. 
+
+The complete feature extraction workflow consists of four sequential stages: (A) Adaptive Signal Tokenization via Adaptive Gaussian-soft-windowed Patching (AGSP), which yields continuous latent patch tokens $T \in \mathbb{R}^{N_p \times D}$ for $N_p$ soft Gaussian windows, (B) Multi-scale Spatio-Temporal Reasoning via Relational Spatio-Temporal Manifold Fusion (R-STMF), extracting the spatial turbine manifold representations $H \in \mathbb{R}^{N \times d_{model}}$ for $N$ turbines, (C) Non-linear Physics Injection via KAN-enhanced Adaptive Meteorological Conditioning (K-AMC), and (D) Feasible Domain Projection via Physics-Informed Dynamic Capping Head (PI-DCH).
 
 \begin{figure*}[!t]
 \centering
