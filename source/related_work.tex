@@ -1,0 +1,71 @@
+\section{Detailed Evolution of Forecasting Methodologies}
+\label{sec:related_work}
+The journey of wind power forecasting (WPF) has been a continuous evolution of improving how we model the complex dynamics of the atmosphere and its interaction with wind turbine technology. This section provides an exhaustive review of the technological milestones that inform the development of PhyST-Net.
+
+\begin{figure}[!t]
+\centering
+\rule{0.48\textwidth}{0.35\textwidth}
+\caption{Technological Timeline of WPF Era. This timeline highlights the transition from statistical foundations to the current physics-aware deep learning era, identifying key architectural breakthroughs.}
+\label{fig:timeline}
+\end{figure}
+
+\subsection{The Classical Era: From Linear to Non-linear Classics}
+\label{sec:classical}
+The earliest efforts in WPF relied on classical statistical methods in the 1970s and 1980s. Autoregressive integrated moving average (ARIMA) models and their seasonal variants (SARIMA) were the gold standard. These models are theoretically grounded in the Wold decomposition theorem and assume that the future value of a signal is a linear combination of its past values and errors. While theoretically elegant and easy to implement, ARIMA is inherently linear and assumes stationarity. This makes it ill-suited for the turbulent and non-linear nature of wind. Furthermore, ARIMA fails to capture the ``long memory'' of the atmosphere, leading to large errors during the rapid onset of weather fronts. 
+
+Historically, these linear models were often augmented with Kalman filters to handle sensor drift and measurement noise. However, even with these augmentations, the predictive horizon was limited to a few minutes due to the rapid decorrelation of the wind signal. The inability of statistical models to handle multi-variate dependencies (e.g., the influence of temperature on air density) further limited their utility in complex farm environments.
+
+\subsection{The Machine Learning Transition}
+\label{sec:ml}
+As computational resources expanded in the late 1990s, the field transitioned to machine learning (ML) techniques. Support vector regression (SVR) utilizing kernel functions offered a significant leap in non-linear modeling capacity. By mapping input features into high-dimensional reproducing kernel Hilbert spaces (RKHS), SVR could find linear boundaries for complex power curves. Ensemble methods like Random Forests (RF) and Gradient Boosting Decision Trees (GBDT) provided robustness against sensor noise. However, these models were ``spatial-blind,'' treating each turbine or farm as an isolated point and ignoring the underlying physics of fluid propagation across the farm layout.
+
+The shift toward ML also highlighted the importance of ``feature engineering.'' Researchers spent years developing specialized indicators such as ``ramp rates,'' ``diurnal cycles,'' and ``turbulence intensity'' to help these models capture the nuances of wind behavior. Despite these efforts, ML models remained fundamentally limited by their inability to process raw, high-dimensional spatio-temporal tensors directly, necessitating a move toward deep representation learning.
+
+\subsection{The Deep Learning Revolution: Sequential to Attention}
+\label{sec:dl}
+The rise of deep learning (DL) brought recurrent neural networks (RNNs) to the forefront. Long short-term memory (LSTM) and gated recurrent units (GRUs) revolutionized temporal modeling by using memory cells and gating mechanisms to preserve context over long horizons, effectively addressing the vanishing gradient problem. However, the sequential nature of RNNs created a computational bottleneck for large-scale farm-wide optimization where hundreds of variables must be processed simultaneously. 
+
+\begin{figure}[!t]
+\centering
+\rule{0.48\textwidth}{0.35\textwidth}
+\caption{Attention Maps in Modern WPF Transformers. This visualization demonstrates how multi-head self-attention captures long-range temporal correlations, forming the baseline for our high-capacity temporal tokens.}
+\label{fig:attention_vis}
+\end{figure}
+
+The introduction of the Transformer architecture \cite{vaswani2017attention} revolutionized the field yet again. By replacing recursion with self-attention, Transformers achieved parallelizable training and an unprecedented ability to capture global temporal context. Innovations such as Informer \cite{zhou2021informer} introduced ``ProbSparse'' attention to reduce complexity, while Autoformer \cite{wu2021autoformer} integrated seasonal-trend decomposition directly into the attention mechanism. FEDformer \cite{zhou2022fedformer} further extended this by performing attention in the frequency domain, particularly effective for the periodic nature of diurnal wind cycles. Despite their success, these models often ``forget'' the local semantic continuity of wind signals, focusing instead on global correlations that may be spurious or noise-driven.
+
+\subsection{The Patching Paradigm: Semantic Sub-series in Wind Signals}
+\label{sec:patching}
+A critical evolution in temporal modeling is the shift from point-wise to patch-wise processing. PatchTST \cite{nie2023patchtst} demonstrated that treating local sub-series as ``patches'' or ``tokens'' preserves semantic information and improves model robustness against sensor jitter. iTransformer \cite{liu2024itransformer} further extended this by inverting the attention mechanism, proving particularly effective for high-dimensional meteorological data. 
+
+However, conventional patching uses ``hard'' windowing, creating artificial mathematical discontinuities at the boundaries. These boundary artifacts can distort the gradients during backpropagation, leading to sub-optimal convergence. Our proposed AGSP module explicitly addresses this by introducing differentiability to the windowing process, ensuring that the transition between patches is physically plausible and numerically stable.
+
+\subsection{Deep Generative Models and Probabilistic Forecasting}
+\label{sec:generative}
+In recent years, the focus has shifted from deterministic point forecasts to probabilistic forecasting, providing a measure of uncertainty. Variational autoencoders (VAEs) and generative adversarial networks (GANs) have been employed to generate multiple physically plausible future scenarios. These models are particularly useful for risk-aware unit commitment, where the ``cost of under-prediction'' is asymmetric compared to over-prediction. 
+
+Diffusion models have also shown promise in WPF, generating high-resolution future power maps by reversing a noise-injection process. While these generative approaches offer high capacity, they often struggle with ``physical realism'' in the tail of the distribution. PhyST-Net addresses this by providing a deterministic, physically bounded backbone that can be extended to probabilistic envelopes in future work.
+
+\subsection{Cross-Domain Knowledge Transfer and Pre-training}
+\label{sec:transfer}
+Another emerging trend is the use of Foundation Models for time series. By pre-training large-scale architectures on thousands of diverse datasets, researchers have developed models capable of zero-shot forecasting. In the renewable energy domain, such ``transfer learning'' can mitigate the issue of data scarcity in newly commissioned wind farms. 
+
+Fine-tuning these global models on local SCADA and NWP features has shown significant promise in reducing the ``Commissioning Error'' during the first few months of a farm's life. PhyST-Net is designed to be compatible with such pre-training paradigms, as its modular architecture allows for the easy swapping of encoder layers.
+
+\subsection{Aero-elastic Coupling and Mechanical State Modeling}
+\label{sec:mechanical}
+Modern wind turbines are complex cyber-physical systems where the aerodynamic forces are coupled with the elastic deformation of the blades. This ``Aero-elastic coupling'' affects the power capture efficiency, especially during turbulent gusts. 
+
+Recent research has attempted to integrate structural vibration data (e.g., from accelerometers in the nacelle) into the forecasting pipeline. By modeling the ``Mechanical Health'' and ``Dynamic Loading'' of the turbine, these models can predict derating events or mechanical failures that affect power output. PhyST-Net incorporates generator RPM and blade pitch as mechanical proxies for this coupling, ensuring that the latent state $H$ is aware of the turbine's internal constraints.
+
+\subsection{Spatial Modeling and Graph Neural Networks}
+\label{sec:spatial}
+Because wind turbines in a farm are physically coupled through the fluid medium, spatial modeling is as important as temporal modeling. Graph neural networks (GNNs) \cite{kipf2017semi, velickovic2018graph} provide the mathematical tools to represent these couplings. Yu et al. \cite{yu2017spatio} and Wu et al. \cite{wu2019graph} were pioneers in combining graph convolutional networks (GCNs) with temporal filters for regional energy forecasting. In the WPF domain, researchers initially used static graphs based on geographical distance \cite{khodayar2019spatio}. However, aerodynamics dictates that the influence between turbines is anisotropic and direction-dependent. This led to adaptive graph learning \cite{ren2023data, bentsen2022spatio} and dual-graph networks \cite{li2024sdg} that attempt to learn relationships dynamically from SCADA data. Yet, these models often ``entangle'' different spatial scales, failing to distinguish between localized wake effects and provincial weather fronts.
+
+\subsection{Interpretability and the Kolmogorov-Arnold Networks}
+\label{sec:kan}
+The black-box nature of traditional multi-layer perceptrons (MLPs) has often limited their adoption in critical power system operations. Kolmogorov-Arnold networks (KAN) \cite{liu2024kan} offer a radical departure from the MLP by replacing fixed node-based activations with learnable spline-based activations on the edges. Recent literature \cite{yamak2025review, han2024kan4tsf, vaca2024kan, xu2024kolmogorov} highlights the potential of KANs for capturing high-order physical dynamics with fewer parameters than standard architectures. In our K-AMC layer, we pass NWP features through a KAN to generate modulation parameters, providing a more ``physics-aligned'' feature injection mechanism that captures the complex curvatures of the turbine power curve.
+
+\subsection{Physics-Informed Deep Learning (PIDL)}
+\label{sec:pidl}
+Finally, the transition from purely data-driven to physics-aware models is a key trend in scientific ML. Physics-informed neural networks (PINNs) regularize the learning process by embedding physical laws into the loss function \cite{welsh2025physics, potosnak2024severe}. However, architectural constraints are often more robust than loss-based penalties. Our work follows the philosophy of ``structural physics induction,'' embedding physical boundaries directly into the network architecture using the PI-DCH and Capping layers to guarantee grid compliance \cite{Shi2023UltraShort}.
