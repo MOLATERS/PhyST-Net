@@ -1,0 +1,56 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{multirow}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+
+\begin{document}
+
+\title{PhyST-Net: A Physics-Aware Differentiable Spatio-Temporal Transformer Network for Robust Wind Power Forecasting}
+
+\author{Xu~Li
+\thanks{Xu Li is with Tongji University, Shanghai, China (e-mail: 2534163@tongji.edu.cn).}%
+}
+
+\markboth{{\it Paper}}%
+{X.~Li: PhyST-Net for Robust Wind Power Forecasting}
+
+\maketitle
+
+\begin{abstract}
+The global transition toward decentralized and decarbonized energy systems has placed wind power at the forefront of the renewable revolution. However, the inherent intermittency and non-stationarity of the atmospheric fluid dynamics present profound challenges for grid stability and real-time economic dispatch. While deep learning has demonstrated remarkable capacity in time series forecasting, current state-of-the-art architectures frequently fail to incorporate the physical inductive biases necessary for reliable power system operation. This paper proposes PhyST-Net, a physics-aware differentiable spatio-temporal transformer network specifically designed to address the ``Forecasting Trilemma'': the simultaneous need for high model capacity, strict physical consistency, and management of spatio-temporal complexity. Our approach introduces Adaptive Gaussian-soft-windowed Patching (AGSP), which utilizes learnable Gaussian soft-windows to eliminate the boundary artifacts inherent in discrete tokenization, thereby preserving the semantic continuity of physical wind gusts. To model the heterogeneous dependencies within large wind farms, we develop the Relational Spatio-Temporal Manifold Fusion (R-STMF) framework, employing a dual-branch K-nearest neighbor aggregation to decouple localized near-field wake turbulence from synoptic-scale meteorological trends. Furthermore, we present KAN-enhanced Adaptive Meteorological Conditioning (K-AMC), a modulation layer powered by Kolmogorov-Arnold Networks (KAN), providing a theoretically superior basis for modeling the non-linear relationship between weather variables and latent states. Finally, we incorporate a Physics-Informed Dynamic Capping Head (PI-DCH) to rigidly bound predictions within the mechanical rated capacity. Validated across three diverse industrial datasets (SDWPF, HoT, and Kelmarsh), PhyST-Net achieves grid compliance rates of up to 96.02\%, providing a robust analytical foundation for the next generation of smart energy systems.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Wind power forecasting, spatio-temporal graph neural networks, Kolmogorov-Arnold networks, physics-aware deep learning, grid compliance, wake effect aerodynamics, multi-scale modeling.
+\end{IEEEkeywords}
+
+\input{sections/nomenclature}
+\input{sections/intro}
+\input{sections/related_work}
+\input{sections/methodology}
+\input{sections/experiments}
+\input{sections/discussion}
+\input{sections/case_studies}
+
+\section{Conclusion and Future Outlook}
+\label{sec:conclusion}
+This paper introduced PhyST-Net, a physics-aware differentiable spatio-temporal transformer network specifically designed for robust and reliable wind power forecasting in modern smart grids. By resolving the ``Forecasting Trilemma'' via AGSP, R-STMF, and K-AMC, we provide a tool that is both highly expressive and physically grounded. Our results across coastal, highland, and small-cluster industrial farms demonstrate that embedding physical inductive biases into high-capacity deep learning is the most effective path toward reliable renewable energy integration.
+
+The achievement of a state-of-the-art grid compliance rate has significant implications for power system policy and industrial operations. Our findings suggest that grid operators can significantly reduce the volume of mandatory spinning reserves if physics-aware forecasting is adopted as the industrial standard. This not only reduces the operational cost of the grid but also facilitates the decommissioning of coal-fired backup plants, directly supporting global decarbonization targets. Furthermore, the ``Safety-First'' nature of our PI-DCH architecture provides the necessary reliability for wind farms to participate in high-frequency primary frequency regulation markets, opening up new revenue streams for farm operators and reducing the total system cost of maintaining grid frequency.
+
+While PhyST-Net represents a significant advancement, several avenues for future research remain open. First, the integration of multi-modal data from satellite imagery and LIDAR sensors could further enhance the spatial resolution of wake modeling. Second, the use of hybrid Graph-Mamba architectures could reduce the computational complexity for ultra-large-scale offshore mega-clusters. Finally, future work will explore the use of uncertainty-aware KANs to provide probabilistic grid-safe envelopes instead of point forecasts.
+
+\input{reference/reference}
+
+\end{document}
