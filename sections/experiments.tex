@@ -15,7 +15,7 @@ The reliability of a wind power forecasting (WPF) model is heavily dependent on 
 
 \subsubsection{SDWPF: Coastal Monsoon and Large-Scale Coordination}
 \label{sec:sdwpf}
-The Shandong Wind Power Forecasting (SDWPF) dataset represents the pinnacle of spatio-temporal complexity in our study. Sourced from a massive onshore farm in Shandong, China, it comprises 134 turbines recorded at a 15-minute resolution. The Shandong coastline is subject to complex sea-land breeze effects and the East Asian monsoon, creating highly non-stationary wind fields with significant seasonal variability. The physical coordination of 134 turbines presents a massive ``Spatio-Temporal Complexity'' challenge, as wake effects propagate across long strings of turbines, often leading to cumulative power deficits that are difficult for static graph models to capture. We utilize the full suite of supervisory control and data acquisition (SCADA) features, including active power, wind speed, wind direction, and internal turbine temperatures, to model the farm's collective response to the moisture-laden airflows of the Yellow Sea.
+The Shandong Wind Power Forecasting (SDWPF) dataset represents the pinnacle of spat-io-temporal complexity in our study. Sourced from a massive onshore farm in Shandong, China, it comprises 134 turbines recorded at a 15-minute resolution. The Shandong coastline is subject to complex sea-land breeze effects and the East Asian monsoon, creating highly non-stationary wind fields with significant seasonal variability. The physical coordination of 134 turbines presents a massive ``Spatio-Temporal Complexity'' challenge, as wake effects propagate across long strings of turbines, often leading to cumulative power deficits that are difficult for static graph models to capture. We utilize the key meteorological SCADA features, including active power, wind speed, wind direction, and ambient temperature, to model the farm's collective response to the moisture-laden airflows of the Yellow Sea.
 
 \subsubsection{HoT: Scottish Highlands and Terrain Turbulence}
 \label{sec:hot}
@@ -23,7 +23,7 @@ The Hill of Towie (HoT) dataset is situated in the rugged highlands of Scotland,
 
 \subsubsection{Kelmarsh: Precision in Small-Scale Clusters}
 \label{sec:kelmarsh}
-Kelmarsh, located in Northamptonshire, UK, is a smaller-scale farm with 6 Senvion MM92 turbines. While the spatial scale is smaller than SDWPF, the precision requirement is significantly higher for local micro-grid stability. Each turbine has a 2.05 MW rated capacity and a 92-meter rotor. This dataset provides high-fidelity numerical weather prediction (NWP) data, allowing us to test the K-AMC layer's ability to correct weather biases. The Senvion MM92's power curve is highly sensitive to blade pitch and nacelle alignment, features we explicitly integrate into our multi-modal feature set to capture the fine-grained efficiency of the cluster.
+Kelmarsh, located in Northamptonshire, UK, is a smaller-scale farm with 6 Senvion MM92 turbines. While the spatial scale is smaller than SDWPF, the precision requirement is significantly higher for local micro-grid stability. Each turbine has a 2.05 MW rated capacity and a 92-meter rotor. This dataset provides high-fidelity meteorological records, allowing us to test the K-AMC layer's ability to correct weather biases. By modeling the non-linear relationship between wind speed and power, PhyST-Net captures the fine-grained efficiency of the cluster without requiring proprietary internal turbine variables.
 
 \begin{figure}[!t]
 \centering
@@ -32,13 +32,13 @@ Kelmarsh, located in Northamptonshire, UK, is a smaller-scale farm with 6 Senvio
 \label{fig:sensors}
 \end{figure}
 
-\subsection{Comprehensive Feature Engineering}
+\subsection{Input Features and State Representation}
 \label{sec:features}
-A key differentiator of our approach is the utilization of a ``High-Dimensional Input Manifold.'' We do not rely solely on historical power; instead, we integrate 15+ SCADA and NWP variables to provide the model with complete physical context:
+To provide PhyST-Net with a physically grounded representation of the atmospheric state, we utilize a clean, highly generalizable meteorological feature set. This ensures the model is easily deployable in industrial settings where high-frequency internal turbine states are often unavailable or proprietary. The input manifold at each turbine consists of:
 \begin{itemize}
-    \item \textbf{Meteorological Features}: Wind speed at hub height (measured by ultrasonic sensors), wind direction (encoded as $\sin/\cos$ pairs to avoid the $0^\circ/360^\circ$ discontinuity), ambient temperature, and barometric pressure.
-    \item \textbf{Electrical Features}: Terminal grid voltage, grid frequency, and reactive power. These features act as proxies for grid disturbances that can affect a turbine's active power setpoint during frequency regulation events.
-    \item \textbf{Mechanical Features}: Nacelle position, individual pitch angles for all three blades, and generator rotational speed (RPM). These provide the physical state necessary for the K-AMC layer to modulate the latent representations effectively.
+    \item \textbf{Historical Target Variable}: Active power output, capturing the baseline production state of each wind turbine generator.
+    \item \textbf{Historical Meteorological Features}: Recorded wind speed at hub height, wind direction (mapped to $\sin$ and $\cos$ components to preserve angular continuity), and ambient temperature. These historical weather variables are extracted directly from the turbine's SCADA logs.
+    \item \textbf{Future Meteorological Forecasts ($Z_{nwp}$)}: Future wind speed, wind direction, and temperature forecasts over the look-ahead forecasting horizon. In our experiments, following standard evaluation protocols in wind power forecasting literature, future meteorological variables in the SCADA records serve as the future weather inputs, representing the forecasting scenario (acting as a proxy for Numerical Weather Prediction, or NWP).
 \end{itemize}
 
 \subsection{Implementation Details and Training Regime}
@@ -53,7 +53,7 @@ The experimental results confirm that PhyST-Net resolves the WPF Trilemma more e
 \label{sec:benchmark}
 As shown in our benchmark results (see Table \ref{tab:nuclear_results_modular}), PhyST-Net consistently achieves the lowest root mean square error (RMSE) and mean absolute error (MAE) across all three datasets, achieving a state-of-the-art grid compliance rate ($\Lambda$) of \textbf{TBD}\% on the Kelmarsh dataset, \textbf{TBD}\% on SDWPF, and \textbf{TBD}\% on HoT. This level of reliability is significantly higher than purely data-driven models like iTransformer, which often fail during sudden, high-intensity wind ramp events. 
 
-It is worth noting that our baselines consist primarily of state-of-the-art Transformer variants and the spatio-temporal graph baseline \textbf{GCGNet}, rather than traditional single-scale graph neural networks. This selection is deliberate: traditional spatial graph models struggle to scale to the massive node-edge combinations required by high-dimensional SCADA data in farms like SDWPF (134 turbines $\times$ 15 features). The selected baselines represent the current industrial standards for handling such high-dimensional multivariate series, making them the most rigorous benchmarks for our proposed architecture.
+It is worth noting that our baselines consist primarily of state-of-the-art Transformer variants and the spat-io-temporal graph baseline \textbf{GCGNet}, rather than traditional single-scale graph neural networks. This selection is deliberate: traditional spatial graph models struggle to scale to the massive node-edge combinations required by spat-io-temporal weather data in farms like SDWPF (134 turbines $\times$ 5 features). The selected baselines represent the current industrial standards for handling such high-dimensional multivariate series, making them the most rigorous benchmarks for our proposed architecture.
 
 \begin{table*}[!t]
 \centering
