@@ -1,49 +1,76 @@
 \section{Introduction}
 \label{sec:intro}
-\IEEEPARstart{T}{he} global energy landscape is currently undergoing a structural transformation of unprecedented scale and urgency. Driven by the imperative to mitigate the catastrophic impacts of anthropogenic climate change and the strategic goal of achieving net-zero carbon emissions by the mid-21st century, nations across the globe are aggressively decommissioning fossil-fuel-based power plants in favor of renewable energy sources. In this context, wind energy has emerged as a primary pillar of the sustainable power transition, celebrated for its technological maturity, declining levelized cost of electricity (LCOE), and minimal environmental footprint during operation. As of 2024, the total installed wind capacity has surpassed several terawatts, with modern wind farms becoming increasingly large, complex, and interconnected.
-
-The integration of high-penetration wind power into synchronous power grids presents formidable technical challenges. Traditional synchronous grids were designed for predictable, dispatchable inertia provided by large-scale thermal and hydro plants. The influx of intermittent, inverter-based resources like wind turbines introduces new modes of instability. The stochastic nature of the wind resource, fluctuating across multiple time scales---from planetary synoptic fronts to micro-scale turbulence---requires a paradigm shift in how power grids are managed. Precise and reliable wind power forecasting (WPF) is no longer merely an auxiliary tool for economic dispatch; it has become a fundamental requirement for maintaining grid frequency stability and ensuring the safety of modern electrical infrastructure.
+\IEEEPARstart{S}{patio-temporal} forecasting aims to predict future node states in graph-structured systems where temporal dynamics and spatial interactions evolve jointly, such as transportation networks, power grids, and industrial sensor clusters. In these applications, node-level trajectories are rarely self-driven; rather, they are shaped by a combination of historical operating conditions, future external drivers, and domain-specific feasibility constraints. As illustrated in Fig.~\ref{fig:multi_scale_processes}, complex network signals typically comprise shared macro-trends driven by exogenous forcing and high-frequency variations unique to individual nodes. Consequently, a practical forecasting model must learn continuous temporal representations, infer dynamic graph relations, and integrate future exogenous variables (ExG) without inducing data leakage, all while ensuring that its predictions remain compatible with operational regimes.
 
 \begin{figure}[htbp]
 \centering
-\rule{0.48\textwidth}{0.22\textwidth}
-\caption{Global Energy Transition Trends (2010-2024). This figure illustrates the skyrocketing penetration of wind energy compared to traditional fossil fuels, highlighting the increasing intermittency challenges for modern power grids.}
-\label{fig:energy_transition}
+\begin{tikzpicture}[font=\sffamily\tiny, >=Stealth]
+    % Coordinates and grid
+    \draw[help lines, gray!10, step=0.5] (0,-1.2) grid (6.2,1.5);
+    \draw[->, thick, gray!60] (0,0) -- (6.5,0) node[right, black] {Time};
+    \draw[->, thick, gray!60] (0,-1.2) -- (0,1.8) node[above, black] {System State};
+    
+    % Macro trend (Blue)
+    \draw[very thick, blue!70!black, smooth, opacity=0.8] 
+        plot coordinates {(0.1,-0.55) (0.9,-0.25) (1.8,0.15) (2.8,0.48) (3.8,0.32) (4.8,0.75) (6.0,0.98)}
+        node[right=2pt, yshift=4pt, font=\sffamily\tiny\bfseries, blue!70!black] {Macro Trend};
+    
+    % Local variation (Orange)
+    \draw[thick, orange!90!black, smooth] 
+        plot coordinates {(0.1,-0.45) (0.35,-0.2) (0.62,-0.65) (0.9,-0.18) (1.15,-0.42) (1.45,0.02) (1.8,-0.08) (2.1,0.38) (2.45,0.02) (2.8,0.55) (3.1,0.2) (3.45,0.72) (3.8,0.25) (4.1,0.64) (4.5,0.38) (4.8,0.88) (5.2,0.58) (5.6,1.12) (6.0,0.9)}
+        node[right=2pt, yshift=-6pt, font=\sffamily\tiny\bfseries, orange!90!black] {Node-specific Noise};
+
+    % Callouts
+    \node[draw=blue!60, fill=blue!5, rounded corners=2pt, align=center, inner sep=2pt] at (1.4,1.3) 
+        {\textbf{Global Forcing}\\Shared low-frequency ExG};
+    \draw[->, blue!60, shorten >=2pt] (1.4,1.0) -- (2.5,0.4);
+
+    \node[draw=orange!60, fill=orange!5, rounded corners=2pt, align=center, inner sep=2pt] at (4.5,-0.8) 
+        {\textbf{Local Perturbations}\\High-frequency spatial jitter};
+    \draw[->, orange!60, shorten >=2pt] (4.5,-0.5) -- (5.0,0.8);
+
+    % Legend-like markers (Moved higher to avoid callout)
+    \fill[blue!70!black] (0.2,1.85) circle (1.5pt) node[right, black] {Shared Pattern};
+    \fill[orange!90!black] (2.2,1.85) circle (1.5pt) node[right, black] {Local Variation};
+
+\end{tikzpicture}
+\caption{Multi-scale spatio-temporal processes. General network signals are composed of shared macro-trends driven by exogenous forcing and high-frequency variations unique to individual nodes. PhyST-Net separates these components through dual-branch graph reasoning.}
+\label{fig:multi_scale_processes}
 \end{figure}
 
-\subsection{The Physics of Atmospheric Fluid Uncertainty}
-\label{sec:physics}
-The primary difficulty in managing wind-dominated grids arises from the stochastic and non-stationary nature of the wind resource. Wind speed is a complex fluid dynamic variable governed by the Navier-Stokes equations and influenced by multi-scale atmospheric processes. On a planetary scale, synoptic pressure gradients drive the bulk movement of air masses across continents. On a local scale, topographical features like ridges, valleys, and coastal interfaces induce localized flow separation and high-intensity turbulence. For a wind farm operator, these processes manifest as sudden shifts in power output, particularly ``wind ramps.''
-
-A wind ramp event occurs when the power output fluctuates by a significant percentage of the farm's rated capacity---often more than 50\%---within a temporal window of less than an hour. Such events can induce severe frequency deviations in the grid, necessitating the deployment of expensive ``spinning reserves'' or, in extreme cases, the activation of load-shedding protocols to prevent cascading failures. The economic and societal costs of missed forecasts during these periods are vast, highlighting the need for forecasting models that are not only accurate on average but also robust during extreme weather events.
-
-\begin{figure}[htbp]
-\centering
-\rule{0.48\textwidth}{0.22\textwidth}
-\caption{Multi-Scale Atmospheric Processes. This diagram conceptually decomposes the wind signal into planetary (Trend) and localized (Seasonal/Turbulent) components, providing the physical motivation for our dual-branch modeling approach.}
-\label{fig:atm_physics}
-\end{figure}
-
-\subsection{The Forecasting Trilemma: A Theoretical Framework}
+\subsection{The Forecasting Trilemma in Spatio-Temporal Networks}
 \label{sec:trilemma}
-Despite decades of research, modern WPF remains hampered by what we define as the ``Forecasting Trilemma''---a complex three-way trade-off between Model Capacity, Physical Consistency, and Spatio-Temporal Complexity. 
+Despite recent architectural advancements, modern spatio-temporal forecasting frameworks remain hampered by a ``Forecasting Trilemma''---an inherent trade-off between Model Capacity, Domain Consistency, and Spatio-Temporal Complexity. 
 
-\subsubsection{Model Capacity vs. Atmospheric Noise}
+\subsubsection{Model Capacity vs. High-Frequency Noise}
 \label{sec:capacity}
-Capacity refers to the expressive power of the underlying mathematical architecture. To capture the high-dimensional, non-linear mappings between atmospheric states and power generation, models must be highly complex. While modern deep learning architectures like Transformers and Inverted Transformers possess immense expressive power, they are notoriously sensitive to the high-frequency stochastic noise present in raw supervisory control and data acquisition (SCADA) data. This sensitivity often leads to over-fitting on spurious correlations, resulting in poor generalization during out-of-distribution events. The challenge is to design an architecture that is complex enough to capture the physical ``signal'' while remaining robust enough to ignore the meteorological ``noise.''
+Capacity denotes the expressive power of the underlying mathematical architecture. While deep learning models, particularly Transformers, possess immense expressive capability for sequence modeling, they are notoriously sensitive to the high-frequency stochastic noise embedded in raw spatio-temporal data (e.g., localized traffic congestions or turbulent wind gusts). Furthermore, standard temporal patching exacerbates this vulnerability by splitting continuous physical regimes across arbitrary boundaries. As highlighted by recent advancements in complexity-balanced sequence modeling, deploying uniform representational capacity across an entire time horizon is computationally inefficient and structurally rigid. The central challenge is designing an architecture equipped with sufficient capacity to capture macro-trend signals, while concurrently employing adaptive temporal allocation to filter node-specific noise.
 
-\subsubsection{Physical Consistency and Grid-Safe Operations}
+\subsubsection{Domain Consistency and Constraint-Aware Operations}
 \label{sec:consistency}
-Consistency is the requirement that the model's outputs adhere to the fundamental laws of aerodynamics and the mechanical constraints of the equipment. Purely data-driven black-box models frequently produce ``physically impossible'' results. For instance, a model might predict a negative power value during low-wind periods or an output that exceeds the rated nameplate capacity during a storm. Such violations destroy operator trust and can lead to dangerous errors in grid dispatch. In the industrial context, a forecast that suggests a turbine can produce 110\% of its rated power is worse than no forecast at all.
+Consistency mandates that a model's outputs adhere to the fundamental physical laws or operational limits inherent to the target domain. Purely data-driven architectures frequently generate unfeasible predictions---such as negative vehicular speeds or power generation exceeding a facility's nameplate capacity. Such violations severely degrade operator trust in critical infrastructure. Inspired by emerging paradigms in safety-critical generation that utilize output-space guidance, a robust forecasting framework must enforce physical feasibility directly within its decoding pathway, moving beyond the limitations of reactive, post-hoc corrections.
 
-\subsubsection{Spatio-Temporal Complexity and Scaling Dynamics}
+\subsubsection{Spatio-Temporal Complexity and Multi-Scale Dynamics}
 \label{sec:complexity}
-Complexity involves the management of the dense spatial coupling between wind turbines. Wind turbines are not isolated entities; they are aerodynamically linked through wake effects. The operation of an upwind turbine creates a wake cone downstream, characterized by reduced wind speed and increased turbulence. Modeling these dynamic, directional, and time-varying interactions requires sophisticated graph-based reasoning that often scales poorly with farm size. Existing models often ``smear'' these spatial scales, failing to distinguish between localized near-field turbulence and farm-wide meteorological patterns.
+Complexity involves the management of dense spatial couplings across heterogeneous nodes. In physical networks, nodes interact via multiple simultaneous mechanisms: local topological dependencies (e.g., aerodynamic wake effects, adjacent road segments) and global environmental fronts (e.g., synoptic weather patterns). Existing models frequently conflate these multi-scale interactions into a singular spatial operator, thereby failing to distinguish localized perturbations from system-wide drivers.
 
-To resolve the constraints of the Forecasting Trilemma, this paper introduces PhyST-Net, a physics-aware differentiable spatio-temporal transformer network. The main contributions of this work are summarized as follows:
+To systematically resolve this trilemma, we propose PhyST-Net, an ExG-aware Spatio-Temporal Graph Transformer designed as a versatile framework for domain-constrained network forecasting. To accommodate the multi-scale and multi-modal nature of dynamic network signals, we introduce the following key innovations:
 \begin{itemize}
-    \item \textbf{Continuous and Differentiable Patching}: We propose the Adaptive Gaussian-soft-windowed Patching (AGSP) module. By replacing rigid temporal patching with learnable Gaussian soft-windows, the model mitigates artificial boundary discontinuities, preserves semantic phase information of wind gusts, and acts as an adaptive low-pass filter to reject atmospheric noise.
-    \item \textbf{Decoupled Spatio-Temporal Topology}: We introduce the Relational Spatio-Temporal Manifold Fusion (R-STMF) framework. R-STMF employs a dual-branch graph fusion logic that decouples localized near-field wake aerodynamics (Seasonal branch) from synoptic-scale meteorological trends (Trend branch), mitigating the spatial smearing inherent in distance-based graphs.
-    \item \textbf{Piecewise Conditioning and Safe Capping}: We implement the K-AMC (using Kolmogorov-Arnold B-splines) for piecewise meteorological modulation and the PI-DCH (via smooth Sigmoid barrier functions) to guarantee strict physical safety and maximum grid compliance without negative-power anomalies.
+    \item \textbf{Continuous and Differentiable Patching}: We present the \textbf{Adaptive Gaussian-soft-windowed Patching (AGSP)} mechanism. By transforming discrete observations into learnable spectral-temporal densities, AGSP recovers continuous event dynamics and functions as an adaptive low-pass filter, effectively rejecting high-frequency noise.
+    \item \textbf{Decoupled Spatio-Temporal Topology}: We introduce the \textbf{Relational Spatio-Temporal Manifold Fusion (R-STMF)} framework. R-STMF leverages a dual-branch graph logic to decompose latent node dynamics into multi-scale spatial manifolds, mitigating the spatial conflation typical of standard distance-based graphs.
+    \item \textbf{Piecewise Conditioning and Safe Capping}: We implement the \textbf{KAN-enhanced Adaptive Meteorological Conditioning (K-AMC)} module, utilizing Kolmogorov-Arnold spline edge functions for the non-linear modulation of graph-enhanced states via exogenous drivers. This is coupled with a \textbf{Physics-Informed Dynamic Capping Head (PI-DCH)} that embeds strict physical safety constraints and adherence to operational envelopes directly into the output space.
 \end{itemize}
 
+By explicitly partitioning the data flow into distinct computational pathways---historical context, relational reasoning, and exogenous conditioning---PhyST-Net establishes a rigorous forecasting contract. This interface-centric design prevents the entanglement of historical data and future drivers, ensuring the architecture can be seamlessly instantiated across diverse critical domains.
+
+\subsection{Contributions}
+\label{sec:contributions}
+The primary contributions of this work are summarized as follows:
+\begin{itemize}
+    \item \textbf{A general ExG-aware graph-forecasting formulation.} We define network forecasting as a multi-modal task where historical states, exogenous variables, and domain constraints are processed through distinguishable pathways, thereby supporting broad architectural generalizability.
+    \item \textbf{A continuous temporal tokenization module.} We introduce AGSP, which supersedes rigid patch boundaries with learnable Gaussian soft-windows, preserving event continuity and minimizing boundary artifacts in non-stationary sequences.
+    \item \textbf{A modular graph adapter for mixed spatial mechanisms.} We develop R-STMF to disentangle multi-scale spatial dependencies prior to relational propagation, providing a modular contract that accommodates alternative graph predictors.
+    \item \textbf{A future-ExG-conditioned decoding path.} We fuse K-AMC and PI-DCH to inject forecast-horizon drivers and structurally enforce feasibility constraints within the model, bridging latent representation learning with strict operational requirements.
+\end{itemize}
+
+The effectiveness and robustness of PhyST-Net are validated through comprehensive experiments on real-world datasets spanning diverse scales and operational conditions, confirming its viability as a state-of-the-art general-purpose network forecasting framework.

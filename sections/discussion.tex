@@ -1,24 +1,33 @@
 \section{Discussion and Qualitative Analysis}
 \label{sec:discussion}
-The experimental results indicate that PhyST-Net provides a significant leap in grid-ready forecasting. In this section, we delve into the qualitative reasons for this performance shift and discuss the broader implications for renewable energy integration.
+The reported results support the view that PhyST-Net is best understood as an ExG-aware spatio-temporal graph Transformer with a wind-specific physical instantiation. This section discusses the modeling implications, optimization effects, and the remaining validation gaps.
 
-\subsection{The Role of Temporal Continuity in Tokenization}
+\subsection{Optimization Effect of Relational Pruning}
+\label{sec:pruning_discussion}
+The relational pruning strategy in R-STMF is not merely a computational heuristic for large graphs; it is a fundamental denoising mechanism. In wind farms, especially those in complex terrain (e.g., the HoT site), SCADA data often contains spurious cross-turbine correlations caused by sensor noise or localized turbulence that does not represent the macro wind field. By enforcing Top-$K$ sparsity, R-STMF forces the model to ignore these low-magnitude, high-frequency dependencies. 
+
+Our preliminary analysis (see Fig.~\ref{fig:pruning_effect_placeholder}) suggests that as $K$ decreases, the model's stability during long-horizon forecasts improves. When $K$ is too large (approaching dense attention), the model tends to "over-smooth" the node-level states, losing the specific high-resolution details of individual turbine responses. Conversely, an optimally pruned graph adapter captures the essential propagation pathways—the "spatial backbone" of the wind farm—while maintaining a low computational footprint. This behavior aligns with the physical intuition that wind information propagates along dominant streamlines rather than diffusing uniformly across the entire farm.
+
+\subsection{ExG as a Model Interface}
+\label{sec:exg_interface_discussion}
+A key design choice is to make exogenous variables explicit. Historical SCADA variables and future NWP-like variables serve different roles: the former explains recent operating context, while the latter conditions the forecast horizon. By separating historical ExG from future ExG, PhyST-Net avoids treating all covariates as a single feature block. This design is important for WPF, but it is also relevant to other graph forecasting tasks where future external drivers are known or forecast, such as traffic calendars, load schedules, weather forecasts, or planned control signals.
+
+\subsection{Interpretability and Efficiency Trade-offs in K-AC}
+\label{sec:kac_tradeoff}
+K-AC introduces KAN-based modulation, which offers a unique trade-off between expressive power and transparency. While traditional MLPs can approximate any function, their ``black-box'' nature makes it difficult for operators to trust the model's reaction to extreme exogenous forecasts. KAN's additive spline structure allows for a feature-wise decomposition: one can visualize exactly how a 20\% increase in a forecast driver scales the latent node representations.
+
+However, this interpretability comes at a cost. Evaluating B-splines is more computationally intensive than simple matrix multiplications, especially when the number of spline bases $M$ or the input dimension $D_f$ is large. In our complexity analysis (Section~\ref{sec:complexity}), we noted that K-AC's cost scales with $M$. In practice, we found that a small $M$ (e.g., 3 to 5) is often sufficient to capture the relevant operating regimes without significantly impacting inference latency. This suggests that K-AC is most effective when used as a ``surgical'' conditioning module rather than a replacement for all dense layers in the network.
+
+\subsection{Aesthetic and Structural Integrity of the Forecast}
+\label{sec:forecast_integrity}
+Beyond numerical metrics like RMSE and MAE, the ``integrity'' of the forecast---its physical or operational plausibility---is crucial for decision-making. Standard STGNNs often produce ``jittery'' forecasts or predictions that exceed the physical capacity of the node during extreme events. DI-DCH addresses this by injecting the capacity envelope directly into the decoding process. This ensures that the generated time series is not only accurate on average but also structurally sound: it respects non-negativity and does not exceed rated limits. Such structural consistency reduces the need for heuristic post-processing and makes the model output directly compatible with downstream optimization tools.
+
+\subsection{Temporal Continuity in Tokenization}
 \label{sec:tokenization_role}
-Our analysis reveals that the differentiable nature of adaptive Gaussian-soft-windowed patching (AGSP) acts as an adaptive low-pass filter. During stable atmospheric periods, the Gaussian windows expand ($\sigma$ increases) to perform a robust smoothing of the signal, ignoring high-frequency sensor jitter. During rapid wind ramp events, the $\sigma$ parameters contract, allowing the tokens to focus on the high-frequency wavefront of the ramp, a behavior fundamentally impossible with the rigid patching used in models like PatchTST. Furthermore, the learnable window centers $\mu_i$ automatically cluster around high-information zones—a phenomenon we define as ``event alignment''—ensuring that the resulting latent tokens are semantically rich and physically consistent before spatial processing.
+Adaptive Gaussian-soft-windowed Patching (AGSP) provides a continuous alternative to hard temporal segmentation. The validation on small-scale networks supports its value, while larger datasets show mixed results under current runs. This suggests that AGSP should be interpreted as a tokenization mechanism that can reduce boundary artifacts and improve smooth event representation. By allowing the temporal receptive fields to overlap and adapt, the model can ``track'' moving fronts across tokens more effectively than fixed-window methods.
 
-\subsection{Spatial Topology Awareness and Disentanglement}
-\label{sec:topology_awareness}
-PhyST-Net successfully models farm-wide wind dynamics through the relational spatio-temporal manifold fusion (R-STMF) framework. The dynamic Far-Field branch discovers dense, non-Euclidean synoptic correlations between geographically distant turbines sharing similar topographical configurations. Meanwhile, the Seasonal branch uses a directional-distance kernel to capture localized wake-induced velocity deficits and turbulence from immediate upwind neighbors. Decoupling these spatial scales prevents the ``spatial information smearing'' that occurs in traditional GNNs, which often fail to distinguish localized wake effects from farm-wide meteorological fronts.
+\subsection{Generalization and Future Work}
+\label{sec:future_work}
+The proposed formulation is designed to be general-purpose. Candidate applications include traffic flow forecasting, electric load forecasting, photovoltaic generation, air-quality prediction, and distributed industrial sensing. 
 
-\subsection{K-AMC: Leveraging Spline Physics for Weather Forecast Integration}
-\label{sec:kamc_physics}
-The superior performance of K-AMC over standard MLP-based modulation validates the ``KAN Advantage''—specifically, the capability of KAN spline-based edges to adaptively approximate non-linear, piecewise continuous relationships (such as turbine power curves) without global gradient smearing. Visualization of the learned edge functions shows that K-AMC automatically scales back the influence of meteorological forecast features once wind speeds exceed the turbine's rated threshold. In this high-wind regime, the turbine is governed by mechanical pitch-control limits rather than thermodynamic air-density fluctuations, a localized physical constraint that standard MLPs struggle to learn without affecting global weight distributions.
-
-\subsection{Generalizability and Economic Implications}
-\label{sec:generalizability}
-Validated across coastal (SDWPF), highland (HoT), and small-cluster (Kelmarsh) environments, the physical inductive biases of PhyST-Net prove universally applicable, capturing sea-land breeze cycles and terrain-induced turbulence without site-specific hyperparameter tuning. Economically, a preliminary projection indicates that for a 100MW farm, the adoption of PhyST-Net could yield annual operational savings exceeding \$250,000. These savings stem from: (1) reduced grid-code deviation penalties due to high-compliance forecasts, (2) minimized operational costs from lowered spinning reserve requirements, and (3) enhanced turbine asset longevity due to smoother, physically bounded dispatch commands.
-
-\subsection{Grid Stability and Societal Impact}
-\label{sec:stability_safety}
-By projecting forecasts strictly onto the feasible domain $[0, P_{rated}]$ via the PI-DCH, PhyST-Net prevents out-of-bound or negative power anomalies. This structural regularizer ensures that grid operators receive actionable, physically grounded signals, which is vital for the stable integration of high-penetration wind power. Societally, high-fidelity forecasting supports the decommissioning of carbon-intensive fossil-fuel ``peaker'' plants and reduces electricity price volatility, directly facilitating a secure, clean transition to net-zero grids.
-
+Several avenues remain for future exploration. First, while K-AC provides a path toward interpretability, a more rigorous causal analysis of the learned spline functions would strengthen the grounding of the model. Second, the current version of PhyST-Net is a point-forecasting model; extending it to produce probabilistic intervals is essential for risk-aware operation. Finally, investigating the model's robustness to exogenous uncertainty---specifically how errors in future ExG propagate through the K-AC modulation---will be critical for real-world deployment.

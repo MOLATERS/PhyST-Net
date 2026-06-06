@@ -1,119 +1,132 @@
-\section{Experimental Setup}
+\section{Experiments}
 \label{sec:experiments}
-To rigorously evaluate the performance and generalizability of PhyST-Net, we conduct comprehensive experiments across three distinct real-world industrial datasets, each representing a unique set of climatic, topographical, and mechanical challenges. These benchmarks span coastal, highland, and small-cluster environments, providing a heterogeneous foundation for multi-scale validation and proving the model's robustness against varying aerodynamic conditions.
+This section presents the empirical evaluation of PhyST-Net. The experimental design is specified in detail because the evaluation protocol is part of the scientific contribution. A TKDE-style evaluation should not only report whether a method obtains lower error, but also explain under which data conditions, forecast horizons, graph scales, and computational budgets the method is effective.
 
-\begin{figure}[!t]
+The experiments are organized around six questions. \textbf{Q1:} Does PhyST-Net improve forecasting accuracy over temporal-only, Transformer-based, graph-based, and domain-specific baselines? \textbf{Q2:} Are the gains consistent across ultra-short, short, and medium horizons? \textbf{Q3:} Which modules contribute to the final performance, and are their effects dataset-dependent? \textbf{Q4:} How sensitive is the model to token number, graph sparsity, hidden dimension, and future-ExG modulation strength? \textbf{Q5:} What is the accuracy--efficiency tradeoff compared with competitive baselines? \textbf{Q6:} Do visualizations of learned relations and forecast cases support the proposed interpretation of temporal continuity, graph adaptation, future-driver conditioning, and feasibility-aware decoding?
+
+\subsection{Experimental Setup}
+\label{sec:exp_setup}
+\textbf{Datasets.} The final evaluation will use SDWPF, HoT, and Kelmarsh. SDWPF is a large-scale wind-farm dataset with 134 nodes at 15-minute resolution and is used to evaluate scalability on a relatively dense graph. HoT contains 21 nodes from a highland site at 10-minute resolution and is used to test performance under terrain-driven variability. Kelmarsh contains 6 nodes at 10-minute resolution and is used to examine high-fidelity node-level forecasting in a small graph. Table~\ref{tab:dataset_stats} summarizes the planned dataset statistics. The final manuscript should additionally report the date range, number of samples after cleaning, available exogenous variables, rated capacity scale, and missing-value handling policy for each dataset.
+
+\begin{table}[!t]
 \centering
-\rule{0.48\textwidth}{0.22\textwidth}
-\caption{Industrial Test Sites Overview. (Left) Shandong wind power forecasting (SDWPF) coastal mega-farm. (Middle) Hill of Towie (HoT) Scottish highland site with complex terrain. (Right) Kelmarsh small-scale cluster for precision stability testing.}
-\label{fig:sites_overview}
-\end{figure}
+\footnotesize
+\caption{Dataset statistics and horizon settings. Values marked as placeholders should be verified before submission.}
+\label{tab:dataset_stats}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Dataset} & \textbf{Nodes} & \textbf{Resolution} & \textbf{Horizons} \\
+\midrule
+SDWPF & 134 & 15 min & 16/288/960 \\
+HoT & 21 & 10 min & 24/432/1440 \\
+Kelmarsh & 6 & 10 min & 24/432/1440 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Industrial Datasets Physical Profiles}
-\label{sec:datasets}
-The reliability of a wind power forecasting (WPF) model is heavily dependent on its ability to handle diverse atmospheric phenomena. We focus our analysis on the following three sites, representing the spectrum of modern wind farm operations.
+\textbf{Protocol.} Each sample follows the input contract in Section~\ref{sec:problem_definition}. The historical target sequence is active power. Historical ExG contains measured exogenous variables and time features over the look-back window. Future ExG contains forecast-horizon exogenous variables and future time features. Recorded future environmental fields may be used as an NWP-like proxy when operational NWP is unavailable; in that case, the paper should state that the experiment evaluates the future-ExG interface under known future drivers rather than NWP-error robustness. All datasets should use chronological splits, and normalization statistics should be fitted only on the training partition. The split protocol should avoid random shuffling because it can leak seasonal and exogenous regimes across train and test partitions.
 
-\subsubsection{SDWPF: Coastal Monsoon and Large-Scale Coordination}
-\label{sec:sdwpf}
-The Shandong Wind Power Forecasting (SDWPF) dataset represents the pinnacle of spat-io-temporal complexity in our study. Sourced from a massive onshore farm in Shandong, China, it comprises 134 turbines recorded at a 15-minute resolution. The Shandong coastline is subject to complex sea-land breeze effects and the East Asian monsoon, creating highly non-stationary wind fields with significant seasonal variability. The physical coordination of 134 turbines presents a massive ``Spatio-Temporal Complexity'' challenge, as wake effects propagate across long strings of turbines, often leading to cumulative power deficits that are difficult for static graph models to capture. We utilize the key meteorological SCADA features, including active power, wind speed, wind direction, and ambient temperature, to model the farm's collective response to the moisture-laden airflows of the Yellow Sea.
+\textbf{Forecast horizons.} The evaluation should include ultra-short, short, and medium horizons. Ultra-short prediction mainly tests recent-state tracking and local temporal continuity. Short-horizon prediction tests whether future ExG and graph propagation improve forecasts over practical scheduling windows. Medium-horizon prediction stresses the stability of the model under longer driver uncertainty and accumulated temporal drift. This horizon-based analysis is important because a method may perform well at one lead time but fail when the dominant information source changes.
 
-\subsubsection{HoT: Scottish Highlands and Terrain Turbulence}
-\label{sec:hot}
-The Hill of Towie (HoT) dataset is situated in the rugged highlands of Scotland, consisting of 21 turbines with a 10-minute sampling interval. This site is characterized by complex, hilly terrain with significant altitude variance between turbines. The presence of steep ridges and valleys induces localized flow separation, complex rotor-disk turbulence, and rapid wind shear. HoT is notorious for ``wind ramps''---rapid acceleration events where wind speeds can jump from cut-in to rated velocity within minutes due to synoptic low-pressure systems moving off the Atlantic. These events test the physical consistency of our model, specifically the ability of the PI-DCH to manage sudden residual power spikes without violating mechanical constraints or causing grid-side frequency disturbances.
+\textbf{Baselines.} The final comparison should include representative temporal, Transformer, graph, and domain-specific baselines under the same split and horizon protocol. Candidate groups include: recurrent or convolutional forecasters, PatchTST-style temporal Transformers, iTransformer-style variate Transformers, adaptive STGNNs, and recent network forecasting models with NWP or SCADA fusion. A paired vanilla configuration should also be retained to isolate the contribution of the proposed architectural changes. Table~\ref{tab:baseline_plan} records the intended baseline groups and their purpose in the evaluation.
 
-\subsubsection{Kelmarsh: Precision in Small-Scale Clusters}
-\label{sec:kelmarsh}
-Kelmarsh, located in Northamptonshire, UK, is a smaller-scale farm with 6 Senvion MM92 turbines. While the spatial scale is smaller than SDWPF, the precision requirement is significantly higher for local micro-grid stability. Each turbine has a 2.05 MW rated capacity and a 92-meter rotor. This dataset provides high-fidelity meteorological records, allowing us to test the K-AMC layer's ability to correct weather biases. By modeling the non-linear relationship between wind speed and power, PhyST-Net captures the fine-grained efficiency of the cluster without requiring proprietary internal turbine variables.
-
-\begin{figure}[!t]
+\begin{table}[!t]
 \centering
-\rule{0.48\textwidth}{0.22\textwidth}
-\caption{SCADA Sensor Suit Distribution. This diagram illustrates the high-dimensional input manifold, covering meteorological, electrical, and mechanical state variables used for physics-informed forecasting.}
-\label{fig:sensors}
-\end{figure}
+\footnotesize
+\caption{Planned baseline groups and evaluation purpose.}
+\label{tab:baseline_plan}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lp{0.29\linewidth}}
+\toprule
+\textbf{Group} & \textbf{Purpose} \\
+\midrule
+Temporal models & Test whether graph reasoning is necessary. \\
+Transformer models & Test temporal-token and attention baselines. \\
+STGNN models & Test adaptive spatial dependency modeling. \\
+Wind-specific models & Compare with domain-oriented WPF systems. \\
+Paired vanilla & Isolate proposed module contributions. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Input Features and State Representation}
-\label{sec:features}
-To provide PhyST-Net with a physically grounded representation of the atmospheric state, we utilize a clean, highly generalizable meteorological feature set. This ensures the model is easily deployable in industrial settings where high-frequency internal turbine states are often unavailable or proprietary. The input manifold at each turbine consists of:
-\begin{itemize}
-    \item \textbf{Historical Target Variable}: Active power output, capturing the baseline production state of each wind turbine generator.
-    \item \textbf{Historical Meteorological Features}: Recorded wind speed at hub height, wind direction (mapped to $\sin$ and $\cos$ components to preserve angular continuity), and ambient temperature. These historical weather variables are extracted directly from the turbine's SCADA logs.
-    \item \textbf{Future Meteorological Forecasts ($Z_{nwp}$)}: Future wind speed, wind direction, and temperature forecasts over the look-ahead forecasting horizon. In our experiments, following standard evaluation protocols in wind power forecasting literature, future meteorological variables in the SCADA records serve as the future weather inputs, representing the forecasting scenario (acting as a proxy for Numerical Weather Prediction, or NWP).
-\end{itemize}
+\textbf{Metrics.} The primary metrics are RMSE and MAE. $R^2$ is reported to quantify explained variance, and the grid-compliance score $\Lambda$ is reported when the rated-capacity scale is well defined:
+\begin{equation}
+\Lambda=\left(1-\frac{\mathrm{RMSE}}{P_{rated}}\right)\times100\%,
+\end{equation}
+where $P_{rated}$ denotes the rated capacity scale used by the dataset-specific evaluation. MAPE should be reported only if a clear masking rule is specified for near-zero targets. For operational interpretation, RMSE should be discussed together with rated capacity, and MAE should be used to describe average dispatch deviation.
 
-\subsection{Implementation Details and Training Regime}
-\label{sec:implementation}
-PhyST-Net is implemented in PyTorch 2.1. The hidden dimension is set to 128, with 3 spatio-temporal layers. The AdamW optimizer is used with a learning rate of $1e-3$ and a weight decay of $1e-4$ to prevent over-fitting. All experiments were conducted on an NVIDIA RTX 5090 GPU, ensuring rapid convergence and the ability to process the massive SDWPF dataset in under 5 hours. We use a sequence length of 96 (Look-back) and a prediction length of 96 (Look-forward) to align with standard 24-hour forecasting requirements in the power industry.
-
-\section{Results and Discussion}
-\label{sec:results}
-The experimental results confirm that PhyST-Net resolves the WPF Trilemma more effectively than current state-of-the-art (SOTA) baselines. In this section, we provide a qualitative and quantitative analysis of the performance gains and discuss the broader implications for renewable energy systems.
-
-\subsection{Benchmark Performance and Grid Compliance}
-\label{sec:benchmark}
-As shown in our benchmark results (see Table \ref{tab:nuclear_results_modular}), PhyST-Net consistently achieves the lowest root mean square error (RMSE) and mean absolute error (MAE) across all three datasets, achieving a state-of-the-art grid compliance rate ($\Lambda$) of \textbf{TBD}\% on the Kelmarsh dataset, \textbf{TBD}\% on SDWPF, and \textbf{TBD}\% on HoT. This level of reliability is significantly higher than purely data-driven models like iTransformer, which often fail during sudden, high-intensity wind ramp events. 
-
-It is worth noting that our baselines consist primarily of state-of-the-art Transformer variants and the spat-io-temporal graph baseline \textbf{GCGNet}, rather than traditional single-scale graph neural networks. This selection is deliberate: traditional spatial graph models struggle to scale to the massive node-edge combinations required by spat-io-temporal weather data in farms like SDWPF (134 turbines $\times$ 5 features). The selected baselines represent the current industrial standards for handling such high-dimensional multivariate series, making them the most rigorous benchmarks for our proposed architecture.
+\subsection{Main Results}
+\label{sec:main_results}
+\textbf{[Placeholder: Insert the final main comparison table for SDWPF, HoT, and Kelmarsh.]}
 
 \begin{table*}[!t]
 \centering
 \footnotesize
-\caption{Benchmark Results: Performance comparison on industrial datasets (Ultra-Short Term). All metrics are to be populated post-experiment.}
-\label{tab:nuclear_results_modular}
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lccccccccc}
+\caption{Placeholder layout for main forecasting results. Replace all placeholder values after the final experimental runs.}
+\label{tab:main_result_placeholder}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lllrrrr}
 \toprule
-\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c}{\textbf{Kelmarsh}} & \multicolumn{3}{c}{\textbf{SDWPF}} & \multicolumn{3}{c}{\textbf{HoT}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
- & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} \\
+\textbf{Dataset} & \textbf{Horizon} & \textbf{Model} & \textbf{RMSE} & \textbf{MAE} & \textbf{$R^2$} & \textbf{$\Lambda$} \\
 \midrule
-GBDT & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-DLinear & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-Baseline (Transformer) & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-Informer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-Autoformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-FEDformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-PatchTST & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-iTransformer & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-GCGNet & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-\textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+SDWPF & Ultra-short & Baseline / PhyST-Net & -- & -- & -- & -- \\
+SDWPF & Short & Baseline / PhyST-Net & -- & -- & -- & -- \\
+SDWPF & Medium & Baseline / PhyST-Net & -- & -- & -- & -- \\
+HoT & Ultra-short & Baseline / PhyST-Net & -- & -- & -- & -- \\
+HoT & Short & Baseline / PhyST-Net & -- & -- & -- & -- \\
+HoT & Medium & Baseline / PhyST-Net & -- & -- & -- & -- \\
+Kelmarsh & Ultra-short & Baseline / PhyST-Net & -- & -- & -- & -- \\
+Kelmarsh & Short & Baseline / PhyST-Net & -- & -- & -- & -- \\
+Kelmarsh & Medium & Baseline / PhyST-Net & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
-\subsection{Hyperparameter Robustness and Computational Overhead}
-\label{sec:hyperparams}
-The dual-branch graph in R-STMF relies on neighbor thresholds $K_{near}$ and $K_{far}$. Empirical tuning revealed that $K_{near} \in [3, 5]$ optimally captures local wake deficits across both coastal (SDWPF) and highland (HoT) layouts, while $K_{far} \ge 10$ is required for stable synoptic trend extraction. The model demonstrates high robustness within these bounds, indicating that the learned attention mechanism effectively masks redundant edges, reducing the need for exhaustive site-specific tuning.
+The final analysis should discuss three aspects. First, it should compare PhyST-Net with temporal-only and graph-aware baselines to show whether the graph adapter contributes beyond temporal representation learning. Second, it should compare PhyST-Net with exogenous-variable-aware baselines to test whether the separate historical-ExG and future-ExG interface is useful. Third, it should analyze horizon-dependent behavior, especially whether short-horizon gains come from local dynamics and whether medium-horizon gains depend more heavily on future ExG. If the method is not best on all metrics, the analysis should state this directly and explain whether the difference is related to horizon length, dataset scale, or the bias introduced by physical constraints.
 
-Furthermore, while the K-AMC layer introduces B-spline computations that increase parameter count and training duration by approximately \textbf{TBD}\% compared to standard MLP modulations, the inference latency remains well within operational limits. On local test hardware, PhyST-Net processes a 96-step forward pass in under \textbf{TBD} milliseconds. This overhead is negligible for 15-minute resolution ultra-short-term forecasting, confirming its readiness for real-time dispatch systems.
-
-\subsection{Ablation Study: Quantifying the Impact of Components}
+\subsection{Ablation Study}
 \label{sec:ablation}
-To verify the contribution of each individual innovation, we conducted a rigorous ablation study across all datasets. The comparative results are systematically reported in Table \ref{tab:ablation_results}. Key findings from the ablation configuration analysis are summarized as follows:
-\begin{itemize}
-    \item \textbf{w/o AGSP}: Replacing Gaussian soft-windows with rigid ``hard patching'' increased RMSE by \textbf{TBD}\%, confirming that boundary artifacts disrupt the learning of long-term temporal dependencies.
-    \item \textbf{w/o R-STMF}: Using a static geographical distance graph instead of our dual-branch K-nearest neighbor (KNN) degraded forecasting performance (increasing MAE by \textbf{TBD}\%), highlighting the importance of aerodynamic scale disentanglement.
-    \item \textbf{w/o K-AMC}: Replacing Kolmogorov-Arnold networks (KAN) edges with standard multi-layer perceptron (MLP) nodes led to a \textbf{TBD}\% accuracy drop, validating the KAN advantage in capturing spline physics.
-    \item \textbf{w/o PI-DCH}: Removing the physical projection layer reduced grid compliance ($\Lambda$) by \textbf{TBD}\%, demonstrating that black-box models inherently struggle with mechanical boundaries.
-\end{itemize}
+\textbf{[Placeholder: Insert module ablations for AGSP, R-STMF, K-AMC, and PI-DCH.]}
 
-\begin{table*}[htbp]
+The ablation study should remove one module at a time while keeping the same training protocol. The expected variants are w/o AGSP, w/o R-STMF, w/o K-AMC, w/o PI-DCH, and a paired vanilla backbone. AGSP ablation tests whether continuous tokenization helps beyond fixed patching. R-STMF ablation tests whether the two-branch graph adapter is useful beyond temporal encoding. K-AMC ablation tests whether future ExG should modulate latent states rather than only be concatenated at input. PI-DCH ablation tests whether differentiable feasibility shaping affects both accuracy and physical validity.
+
+\begin{table}[!t]
 \centering
 \footnotesize
-\caption{Ablation Study: Contribution of individual PhyST-Net components across industrial datasets. All metrics are to be populated post-experiment.}
-\label{tab:ablation_results}
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lccccccccc}
+\caption{Placeholder layout for module ablations.}
+\label{tab:ablation_placeholder}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
 \toprule
-\multirow{2}{*}{\textbf{Configuration}} & \multicolumn{3}{c}{\textbf{Kelmarsh}} & \multicolumn{3}{c}{\textbf{SDWPF}} & \multicolumn{3}{c}{\textbf{HoT}} \\
-\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
- & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} & \textbf{RMSE} & \textbf{MAE} & \textbf{Lambda ($\Lambda$)} \\
+\textbf{Variant} & \textbf{RMSE} & \textbf{MAE} & \textbf{$R^2$} & \textbf{$\Lambda$} \\
 \midrule
-\textbf{PhyST-Net (Ours)} & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-w/o AGSP & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-w/o R-STMF & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-w/o K-AMC & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
-w/o PI-DCH & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% & \textbf{TBD} & \textbf{TBD} & \textbf{TBD}\% \\
+Full PhyST-Net & -- & -- & -- & -- \\
+w/o AGSP & -- & -- & -- & -- \\
+w/o R-STMF & -- & -- & -- & -- \\
+w/o K-AMC & -- & -- & -- & -- \\
+w/o PI-DCH & -- & -- & -- & -- \\
+Vanilla & -- & -- & -- & -- \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
+
+The analysis should avoid claiming that every module is universally beneficial. A more credible interpretation is to identify which datasets and horizons benefit from each inductive bias. For example, AGSP may be most useful when ramp events are frequent, R-STMF may be more important in larger graphs, K-AMC may dominate when future exogenous variables are reliable, and PI-DCH may be most visible in high-power regimes.
+
+\subsection{Parameter Sensitivity}
+\label{sec:parameter_sensitivity}
+\textbf{[Placeholder: Insert sensitivity curves or tables for the number of AGSP patches, graph top-$K$, hidden dimension, and K-AMC modulation strength.]}
+
+This analysis should connect hyperparameters to model behavior. The number of AGSP patches controls temporal resolution: too few patches may underrepresent regime changes, while too many patches increase computation and may reintroduce noise. Graph top-$K$ controls sparsity of relational propagation: small $K$ may miss useful long-range relations, while large $K$ can dilute local structure and approach dense attention. Hidden dimension controls representation capacity and overfitting risk. K-AMC modulation strength controls the influence of future ExG; overly strong modulation may make the model sensitive to NWP errors, whereas overly weak modulation may reduce the benefit of forecast-horizon drivers.
+
+\subsection{Efficiency Analysis}
+\label{sec:efficiency}
+\textbf{[Placeholder: Insert parameter count, training time, inference time, memory usage, and forecasting error under the same hardware setting.]}
+
+A TKDE-style evaluation should report both accuracy and computational cost. The most important comparison is whether R-STMF and AGSP improve forecasting accuracy without making inference impractical for operational scheduling. The efficiency table should include parameter count, GPU memory, training time per epoch, inference latency per batch, and total inference time for one forecasting cycle. The analysis should be linked to the complexity terms in Section~\ref{sec:complexity_analysis}; in particular, it should verify whether the sparse top-$K$ graph adapter reduces the empirical cost relative to dense graph attention.
+
+\subsection{Case Study and Visualization}
+\label{sec:case_study}
+\textbf{[Placeholder: Insert prediction curves, ramp-event cases, learned graph visualizations, and future-ExG conditioning visualizations.]}
+
+The case study should be used to explain model behavior rather than only decorate the paper. Useful visualizations include node-level prediction curves during ramp events, heat maps of learned graph weights, comparisons before and after future-ExG modulation, and examples where PI-DCH prevents infeasible high-power predictions. For K-AMC, the most relevant visualization is a feature-wise modulation plot derived from Eqs.~(\ref{eq:kan_edge_sum})--(\ref{eq:kan_derivative}). Such a plot can show whether wind-speed variables, wind-direction variables, or temporal features dominate the scale and shift parameters under different forecast regimes.

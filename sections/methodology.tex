@@ -1,116 +1,139 @@
-\section{Methodology}
+\section{Method}
 \label{sec:methodology}
-The PhyST-Net architecture is conceptualized as a ``Physical-Information Pipeline'' designed to transform raw, non-stationary atmospheric signals into grid-compliant power forecasts. Mathematically, the end-to-end mapping of the proposed pipeline is formalized as follows:
+PhyST-Net is an ExG-aware spatio-temporal graph Transformer designed for network-structured node forecasting with known external drivers and domain constraints. Given the inputs defined in Section~\ref{sec:problem_definition}, the model follows the pipeline in Fig.~\ref{fig:physt_architecture}. Historical target states and historical ExG are first embedded into node-level temporal representations. AGSP converts the temporal history into continuous tokens. A Transformer backbone learns temporal dependencies. R-STMF serves as a graph adapter that maps temporal node states to graph-enhanced node states. K-AMC injects future ExG into the latent representation. PI-DCH finally decodes the conditioned states into feasible forecasts respecting domain-specific bounds.
+
+\input{sections/architecture_figure}
+
+\subsection{Overall Framework}
+\label{sec:overall_framework}
+For a mini-batch, let $\mathbf{X}\in\mathbb{R}^{B\times T\times N\times D_x}$ denote historical target states, $\mathbf{E}^h\in\mathbb{R}^{B\times T\times D_h}$ denote historical ExG, and $\mathbf{E}^f\in\mathbb{R}^{B\times H\times D_f}$ denote future ExG. The model produces $\hat{\mathbf{Y}}\in\mathbb{R}^{B\times H\times N\times D_y}$. The computation can be written as
 \begin{equation}
-\hat{Y} = \text{PI-DCH} \Big( \text{K-AMC} \big( \text{R-STMF}(\text{AGSP}(X)), Z_{nwp} \big) \Big)
+Z = \Phi_{patch}(\mathbf{X},\mathbf{E}^{h},M_G),
+\label{eq:overall_patch}
 \end{equation}
-where $X \in \mathbb{R}^{L \times D}$ represents the raw time-series inputs of history length $L$ and features $D$, $Z_{nwp}$ represents the multi-variate Numerical Weather Prediction (NWP) features, and $\hat{Y} \in [0, P_{rated}]^S$ denotes the final grid-safe, physically bounded wind power forecast for a look-forward horizon $S$. 
+\begin{equation}
+H_T = \Phi_{temp}(Z),\quad H_G = \Phi_{graph}(H_T,A,M_G),
+\label{eq:overall_temp_graph}
+\end{equation}
+\begin{equation}
+H_F = \Phi_{exg}(H_G,\mathbf{E}^{f}),\quad \hat{\mathbf{Y}} = \Phi_{head}(H_F,\mathbf{E}^{f},\Omega),
+\label{eq:overall_exg_head}
+\end{equation}
+where $\Phi_{patch}$ is AGSP, $\Phi_{temp}$ is the temporal Transformer encoder, $\Phi_{graph}$ is the graph adapter, $\Phi_{exg}$ is future-ExG conditioning (K-AMC), and $\Phi_{head}$ is the physics-informed prediction head (PI-DCH). This decomposition emphasizes that the architectural backbone is defined on generic graph-structured sequences, while domain-specific knowledge is encapsulated in the input interface and the constraint head.
 
-The complete feature extraction workflow consists of four sequential stages: (A) Adaptive Signal Tokenization via Adaptive Gaussian-soft-windowed Patching (AGSP), which yields continuous latent patch tokens $T \in \mathbb{R}^{N_p \times D}$ for $N_p$ soft Gaussian windows, (B) Multi-scale Spatio-Temporal Reasoning via Relational Spatio-Temporal Manifold Fusion (R-STMF), extracting the spatial turbine manifold representations $H \in \mathbb{R}^{N \times d_{model}}$ for $N$ turbines, (C) Non-linear Physics Injection via KAN-enhanced Adaptive Meteorological Conditioning (K-AMC), and (D) Feasible Domain Projection via Physics-Informed Dynamic Capping Head (PI-DCH).
-
-\begin{figure*}[!t]
-\centering
-\rule{\textwidth}{0.18\textwidth}
-\caption{Overall Architecture of PhyST-Net. This schematic illustrates the four-stage physical pipeline, highlighting how atmospheric uncertainty is progressively refined into physically consistent power manifold projections.}
-\label{fig:full_arch}
-\end{figure*}
-
-\subsection{Adaptive Signal Acquisition: Adaptive Gaussian-soft-windowed Patching (AGSP)}
+\subsection{Adaptive Gaussian-soft-windowed Patching}
 \label{sec:agsp}
-A persistent challenge in deep-learning-based wind power forecasting (WPF) is the ``Semantic Gap'' between high-frequency point-wise sampling and the underlying physical reality of wind gusts. Raw wind speed data is inherently noisy, containing high-frequency turbulent fluctuations that do not contribute to bulk power generation. Conventional patching methods segment the input sequence into rigid, discrete blocks. While this reduces computational complexity, it introduces ``boundary artifacts''---artificial discontinuities at the edges of the patches that do not exist in the fluid wind field. These artifacts can distort the gradients during backpropagation and lead to sub-optimal feature extraction.
+Transformer-based forecasters conventionally mitigate sequence length by aggregating observations into discrete temporal patches. While computationally convenient, fixed non-overlapping patches inevitably induce boundary artifacts when the underlying physical signal transverses a patch boundary. Aligning with emerging principles in complexity-balanced sequence modeling---where representational capacity is dynamically distributed proportional to signal variation---AGSP supersedes rigid patch assignments with learnable Gaussian soft-windows. This differentiable formulation empowers the architecture to autonomously allocate dense receptive fields to highly transient events and broader, smoother fields to stable operational regimes.
 
-\subsubsection{Physical Intuition of Continuous Patching}
-\label{sec:agsp_intuition}
-The fluid dynamics of the atmosphere are fundamentally continuous. A wind gust does not suddenly ``start'' at a discrete time step and ``end'' at another; it evolves as a continuous wave packet with a specific temporal envelope. Rigid patching severs this envelope, losing the phase information that resides at the patch boundaries. Furthermore, from a signal processing perspective, rigid patching is equivalent to a rectangular window filter, introducing high-frequency leakage in the spectral domain. 
-
-AGSP resolves this by treating the patching process as a differentiable, continuous operation using Gaussian soft-windows. This allows the model to ``smooth'' the transition between semantic tokens, preserving the signal's physical integrity and ensuring that the gradient manifold remains smooth during training. By using Gaussian windows, we effectively perform a localized low-pass filtering operation that is aware of the signal's non-stationarity.
-
-\subsubsection{Mathematical Formulation of AGSP}
-\label{sec:agsp_math}
-Instead of hard boundaries, we define a set of $N_p$ Gaussian soft-windows across the temporal axis. For each patch $i \in \{1, \dots, N_p\}$, the weighting function $W_i(t)$ is defined as:
+For node $n$ and temporal window $i$, the unnormalized weight at time index $\tau\in\{1,\ldots,T\}$ is
 \begin{equation}
-W_i(t) = \frac{1}{\sqrt{2\pi\sigma_i^2}} \exp\left( -\frac{(t - \mu_i)^2}{2\sigma_i^2 + \epsilon} \right)
+W_i(\tau)=\exp\left(-\frac{(\tau-\mu_i)^2}{2\sigma_i^2+\epsilon}\right),
+\label{eq:agsp_window}
 \end{equation}
-where $t$ denotes the discrete time index, $\mu_i$ is the temporal center of the $i$-th patch, $\sigma_i$ is the corresponding bandwidth, and $\epsilon$ is a small constant for numerical stability. Both $\mu_i$ and $\sigma_i$ are initialized using \texttt{torch.linspace} across the sequence length $L$ and are subsequently refined as learnable parameters using the reparameterization trick. This allows the model to ``shift'' its attention to more relevant physical events, such as the leading edge of a wind ramp, during training.
-
-To ensure the ``Partition of Unity'' property, guaranteeing that the total energy of the signal is preserved across the tokens, we apply a Softmax normalization:
+where $\mu_i$ and $\sigma_i$ are learnable center and bandwidth parameters. To ensure numerical stability and valid window properties, we parameterize the bandwidth as $\sigma_i = \text{softplus}(\rho_i) + \delta$, where $\rho_i$ is the learnable parameter. The centers $\mu_i$ are initialized to uniform grid locations across the historical window to encourage an ordered temporal partition. The weights are normalized across $P$ windows:
 \begin{equation}
-\tilde{W}_i(t) = \frac{W_i(t)}{\sum_{j=1}^{N_p} W_j(t) + \delta}
+\tilde{W}_i(\tau)=\frac{W_i(\tau)}{\sum_{j=1}^{P}W_j(\tau)+\epsilon}.
+\label{eq:agsp_norm}
 \end{equation}
-where $\delta$ is a stabilization factor. The resulting token $T_i$ for patch $i$ is then computed as the weighted average of the raw input values $X_t$:
+Let $\bar{x}_{n}(\tau)$ denote the embedded historical state. The token for node $n$ and patch $i$ is
 \begin{equation}
-T_i = \sum_{t=1}^L \tilde{W}_i(t) \cdot X_t
+z_{n,i}=\psi\left(\sum_{\tau=1}^{T}\tilde{W}_i(\tau)\bar{x}_{n}(\tau)\right)+e_n+p_i,
+\label{eq:agsp_token}
 \end{equation}
-where $X_t$ represents the input measurement at time $t$.
+where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$ is a temporal patch embedding. This formulation allows the model to optimize the temporal receptive fields directly from the forecast loss.
 
-\subsubsection{The Adaptive Low-Pass Filter Mechanism}
-\label{sec:agsp_filter}
-This formulation allows AGSP to act as an Adaptive Low-Pass Filter. When the wind signal is stable, the model can learn larger $\sigma_i$ to perform robust noise reduction, capturing broader temporal trends. Conversely, during highly turbulent ramp events, $\sigma_i$ can contract to focus on high-frequency transient features. This adaptability ensures that the tokens generated for the subsequent spatial layers are semantically rich and physically consistent.
+\subsection{Temporal Representation Learning}
+\label{sec:temporal_encoder}
+The token tensor $Z$ is passed to a Transformer encoder to learn dependencies among the $P$ tokens of each node:
+\begin{equation}
+H_T=\operatorname{STEnc}(Z), \quad H_T\in\mathbb{R}^{B\times N\times P\times d},
+\label{eq:temporal_encoder}
+\end{equation}
 
-\subsection{Multi-Scale Spatio-Temporal Reasoning (R-STMF)}
+\subsection{Relational Spatio-Temporal Manifold Fusion}
 \label{sec:rstmf}
-The spatial coupling within a wind farm is governed by the complex aerodynamics of wake effects. When a turbine operates, it extracts kinetic energy from the wind, creating a ``velocity deficit'' and increased turbulence downstream. Modeling this interaction is critical, but static distance-based graphs fail to account for the dynamic, directional nature of wind flow. Furthermore, farm-wide dynamics occur at multiple spatial scales. We propose R-STMF to explicitly decouple these scales via a dual-branch K-nearest neighbor (KNN) architecture.
-
-\subsubsection{Aerodynamic Disentanglement Principles}
-\label{sec:rstmf_aerodynamics}
-Traditional graph neural networks (GNNs) for WPF use a single adjacency matrix based on geographical distance. This approach is flawed because it ignores the anisotropic nature of wind flow. An upwind turbine $j$ influences a downwind turbine $i$, but the influence of $i$ on $j$ is negligible. Moreover, the ``scale'' of the influence varies. Local wake effects only affect the immediate neighbor, while regional weather fronts affect the entire farm simultaneously. 
-
-R-STMF addresses this by separating the spatial reasoning into two specialized branches: the Seasonal branch for localized wake modeling and the Trend branch for synoptic-scale correlations. This disentanglement follows the ``Separation of Variables'' principle in physics, allowing each branch to focus on a specific frequency band of the spatial signal.
-
-\subsubsection{The Seasonal Branch: Local Wake Aerodynamics}
-\label{sec:rstmf_seasonal}
-The first branch of R-STMF is designed to capture immediate aerodynamic interference. We construct a sparse, directional adjacency matrix $A_{near}$ using a small $K_{near}$ (e.g., $K=4$). The edge weights between turbines $j$ (upwind) and $i$ (downwind) are calculated using a directional-distance kernel:
+R-STMF serves as the graph adapter, mapping $H_T$ to $H_G$. In many systems, spatial dependence contains multiple mechanisms. R-STMF addresses this by decomposing the temporal state along the patch axis:
 \begin{equation}
-A_{near, ij} = \exp\left( -\frac{d_{ij}^2}{\kappa} \right) \cdot \max(0, \cos(\theta_{ij} - \Phi_{wind}))^n
+U=\operatorname{DWConv}_{\tau}(H_T), \quad R=H_T-U,
+\label{eq:rstmf_decomp}
 \end{equation}
-where $d_{ij}$ is the Euclidean distance, $\kappa$ is a distance scaling constant, $\theta_{ij}$ is the orientation angle between turbines, $\Phi_{wind}$ is the prevailing wind direction, and $n$ is a directional sensitivity parameter. The cosine term ensures that only turbines physically ``downwind'' are connected, mimicking the physical geometry of a wake cone. This branch focuses on the high-frequency turbulence and power deficits caused by neighboring units.
-
-\subsubsection{The Trend Branch: Far-Field Synoptic Evolution}
-\label{sec:rstmf_trend}
-The second branch focuses on macroscopic meteorological trends. Wind speed shifts often move across a large farm footprint as a cohesive weather front. We use a larger $K_{far}$ (e.g., $K=12$) and a dense connectivity pattern to capture these synoptic correlations. Unlike the Seasonal branch, $A_{far}$ is learned dynamically using a self-attention mechanism over turbine latent embeddings:
+where $\operatorname{DWConv}_{\tau}$ is a depth-wise temporal convolution. In our framework, $U$ and $R$ are treated as components capturing local-variation-like and lower-frequency residual features, respectively. For each branch $c\in\{U,R\}$ and patch $p$, relational attention scores are computed as
 \begin{equation}
-A_{far} = \text{Softmax}\left( \frac{(H W_Q) (H W_K)^T}{\sqrt{d_{model}}} \right)
+S_c^{(p)}=\frac{Q_c^{(p)}(K_c^{(p)})^{\top}}{\sqrt{d_m}}+\mathcal{B}_0,
+\label{eq:rstmf_score}
 \end{equation}
-where $H$ is the turbine embedding matrix, $W_Q, W_K$ are learnable projection matrices, and $d_{model}$ denotes the embedding dimension. This allows the model to discover non-Euclidean correlations, such as two distant turbines experiencing similar wind patterns due to shared topographical features. By disentangling these scales, R-STMF avoids the ``Spatial Information Smearing'' that plagues traditional single-graph models.
+where $\mathcal{B}_0$ is a graph prior bias.
 
-\subsubsection{Graph Fusion Logic}
-\label{sec:rstmf_fusion}
-The outputs from the near-field and far-field branches are combined using a learnable gating mechanism:
+\subsubsection{Relational Pruning and Masking}
+To enforce spatial locality and reduce computation, R-STMF employs a Top-$K$ pruning strategy. The attention matrix $A_c^{(p)}$ is computed by masking out elements that are not among the $K_c$ largest scores:
 \begin{equation}
-H_{combined} = \sigma(G) \cdot H_{near} + (1 - \sigma(G)) \cdot H_{far}
+\operatorname{Mask}(S, K)_{ij} = \begin{cases} S_{ij} & \text{if } S_{ij} \in \text{TopK}(S_i, K) \\ -\infty & \text{otherwise} \end{cases},
+\label{eq:rstmf_mask}
 \end{equation}
-where $G$ is a learnable fusion vector and $\sigma$ is the sigmoid function. This ensures that the model can dynamically adjust the relative importance of local wake effects and global weather fronts depending on the current atmospheric regime. During stable monsoon periods, the far-field branch dominates; during turbulent storm events, the near-field branch provides the necessary high-resolution spatial context.
+\begin{equation}
+A_c^{(p)}=\operatorname{Softmax}\left(\operatorname{Mask}(S_c^{(p)}, K_c)\right).
+\label{eq:rstmf_topk}
+\end{equation}
+This ensures that node $i$ only aggregates information from its $K$ most relevant neighbors, acting as a structural regularizer against transient noise.
 
-\subsection{KAN-enhanced Adaptive Meteorological Conditioning (K-AMC)}
+\subsection{Future-ExG Conditioning (K-AMC)}
 \label{sec:kamc}
-Weather forecasts (acting as a proxy for Numerical Weather Prediction, or NWP) provide critical future-looking information. However, the relationship between forecast variables (wind speed, temperature, pressure) and actual power output is highly non-linear. Standard multi-layer perceptron (MLP) based feature injection often fails to capture the ``fine-grained'' physics of this mapping.
-
-\subsubsection{Theoretical Limitation of MLPs in Physics}
-\label{sec:mlp_limits}
-Multi-layer perceptrons (MLPs) use node-based activations that tend to smear physical relationships across a dense weight matrix. For a physical system like a wind turbine, the mapping from meteorological variables to power (the power curve) is piecewise and highly non-linear. Linear or MLP-based modulation treats the entire input manifold as a continuous, smooth surface, a poor approximation for the sudden saturation effects of wind turbines at rated speed.
-
-\subsubsection{The KAN Paradigm: Splines on Edges}
-\label{sec:kan_advantage}
-We introduce K-AMC, utilizing Kolmogorov-Arnold networks (KAN) \cite{liu2024kan}. Unlike MLPs, KANs place learnable B-spline functions on the edges. A KAN layer represents a multivariate function as a sum of univariate functions on the edges:
+K-AMC injects future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. A critical step is aligning the horizon-wise drivers with the patch-wise latent states. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{P \times d_{exg}}$ that maps the $H$ future steps into $P$ exogenous tokens via temporal pooling or a linear projection. The aligned representation $\bar{\mathbf{E}}^f$ is then passed through a KAN block to produce modulation parameters:
 \begin{equation}
-\Phi(x) = \sum_{q=1}^{2n+1} \Phi_q \left( \sum_{p=1}^n \phi_{q, p}(x_p) \right)
+[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f), \quad \gamma, \beta \in \mathbb{R}^{B \times N \times P \times d}.
+\label{eq:kamc_kan}
 \end{equation}
-where $x$ is the input vector, and $\phi_{q,p}, \Phi_q$ are univariate spline functions. In our K-AMC layer, we pass the NWP features $Z_{nwp}$ through a KAN to generate modulation parameters $\gamma$ and $\beta$. The latent representation $H$ is then transformed:
+The conditioned latent state is then obtained via element-wise scale and shift:
 \begin{equation}
-H_{fused} = H + \lambda \cdot (\text{KAN}_{\gamma}(Z_{nwp}) \odot H + \text{KAN}_{\beta}(Z_{nwp}) - H)
+H_F=H_G+\lambda\left(\gamma\odot H_G+\beta-H_G\right).
+\label{eq:kamc_mod}
 \end{equation}
-where $\lambda$ is a residual scaling factor (set to 0.1). The spline-based edges allow the model to learn ``piecewise'' physical corrections, making K-AMC a theoretically superior choice for physics-informed modulation. Visualization of the learned edge functions shows that the KAN effectively reconstructs the theoretical power curve without explicit prior knowledge.
 
-\subsection{Physical Manifold Projection via PI-DCH}
+\subsection{Physics-Informed Dynamic Capping Head (PI-DCH)}
 \label{sec:pidch}
-A major drawback of black-box WPF models is their lack of physical awareness at the output layer. Traditional Mean Squared Error (MSE) loss treats all errors equally, often leading to predictions that are ``mathematically optimal but physically impossible,'' such as negative power values or predictions exceeding the rated capacity $P_{rated}$. 
+PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$. In mission-critical environments such as smart grids, safety-critical traffic routing, and industrial control systems, deploying generative or predictive models mandates rigorous output-space guidance to preclude physically unfeasible trajectories. PI-DCH achieves this by systematically steering latent predictions toward a dynamic feasible envelope $C_{dyn}$ prior to the enforcement of a strict physical boundary. 
 
-\subsubsection{Differentiable Barrier Functions and Mechanical Safety}
-\label{sec:barrier}
-To enforce physical boundaries while maintaining smooth gradients for training, we propose the Physics-Informed Dynamic Capping Head (PI-DCH). The final linear output $\tilde{Y}$ is passed through a dual-Sigmoid smooth clipper, acting as a differentiable barrier function:
+Specifically, a linear decoder first generates an unconstrained predictive tensor $\tilde{Y} = \operatorname{Linear}(H_F)$. Concurrently, a learned barrier gate $u=\sigma(g(H_F))$ modulates this prediction smoothly:
 \begin{equation}
-\hat{Y} = P_{rated} \cdot \left[ \sigma\left( \frac{\tilde{Y} - L}{\tau} \right) \cdot \sigma\left( \frac{U - \tilde{Y}}{\tau} \right) \right]
+\hat{Y}_{soft}=\tilde{Y}+u\odot(C_{dyn}-\tilde{Y}).
+\label{eq:pidch_gate}
 \end{equation}
-where $L$ and $U$ are learnable offsets and $\tau$ is a temperature parameter that controls the sharpness of the transition. A known vulnerability of Sigmoid-based clipping is the risk of vanishing gradients when $\tilde{Y}$ drastically exceeds the bounds. To mitigate this saturation during backpropagation, $\tau$ is dynamically annealed during training: starting with a large value for a softer, gradient-rich landscape, and decaying towards a strict step function. Additionally, a mild $L_2$ regularization penalty on $\tilde{Y}$ ensures the pre-clipped latent manifold remains close to the operational domain.
+During the training phase, this soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss, guaranteeing that gradients backpropagate natively through the constraint-shaping logic. The definitive feasible forecast $\hat{Y}$ is subsequently derived via a non-linear projection:
+\begin{equation}
+\hat{Y}=\operatorname{clip}(\hat{Y}_{soft},0,C_{dyn}).
+\label{eq:pidch_clip}
+\end{equation}
+This physics-informed projection is stringently enforced during inference, mathematically guaranteeing absolute operational feasibility without resorting to opaque, post-hoc heuristic corrections.
 
-The PI-DCH ensures that the model's output manifold is strictly projected into the feasible domain $[0, P_{rated}]$. By embedding this constraint directly into the architecture, we guarantee that grid operators receive a signal that is always physically grounded and actionable. This structural regularizer prevents the generation of out-of-bound forecasts that could mislead grid dispatch algorithms, thereby maximizing grid compliance ($\Lambda$) and operational trust.
+\subsection{Computational Complexity Analysis}
+\label{sec:complexity_analysis}
+A core motivation of PhyST-Net is mitigating the severe computational bottlenecks of dense spatio-temporal Transformers, which conventionally exhibit a time complexity of $\mathcal{O}(N \cdot T^2 + T \cdot N^2)$ for sequence length $T$ and node count $N$. PhyST-Net structurally resolves this through its decoupled topology.
+
+In the temporal pathway, the AGSP module compresses the raw $T$-length sequence into $P$ continuous tokens (where $P \ll T$). Consequently, the temporal Transformer encoder's self-attention complexity is reduced from $\mathcal{O}(N \cdot T^2)$ to $\mathcal{O}(N \cdot P^2)$. 
+
+In the spatial pathway, standard full-graph attention requires $\mathcal{O}(P \cdot N^2)$ operations. The R-STMF module introduces a Top-$K$ sparse masking strategy (Eq.~\ref{eq:rstmf_topk}), restricting message passing to a parameterized neighborhood size $K$. This bounds the spatial complexity to $\mathcal{O}(P \cdot K \cdot N)$. Thus, the overall self-attention complexity of the PhyST-Net backbone is decoupled and bounded by $\mathcal{O}(N \cdot P^2 + P \cdot K \cdot N)$, rendering the architecture highly scalable for large physical networks and extended forecasting horizons without sacrificing expressive capability.
+
+\subsection{Optimization Objective}
+\label{sec:optimization}
+The training objective is $\mathcal{L}=\mathcal{L}_{mse}+\lambda_{\Omega}\mathcal{L}_{penalty}$. We define the feasibility penalty $\mathcal{L}_{penalty}$ to penalize violations of the operational envelope:
+\begin{equation}
+\mathcal{L}_{penalty} = \frac{1}{N H} \sum_{n,t} \left[ \max(0, -\hat{Y}_{n,t}) + \max(0, \hat{Y}_{n,t} - C_{dyn,n,t}) \right].
+\label{eq:feasibility_penalty}
+\end{equation}
+This term ensures the model learns to stay within the feasible set $\Omega$ before the final clipping operation. Algorithm~\ref{alg:physt_net} summarizes the forward pass.
+
+\begin{algorithm}[H]
+\caption{PhyST-Net Forward Pass}
+\label{alg:physt_net}
+\begin{algorithmic}[1]
+\REQUIRE $\mathbf{X},\mathbf{E}^h,\mathbf{E}^f,A,M_G$.
+\ENSURE $\hat{\mathbf{Y}}$.
+\STATE Embed historical target states and historical ExG.
+\STATE Construct AGSP tokens $Z$ using Eqs.~(\ref{eq:agsp_norm})--(\ref{eq:agsp_token}).
+\STATE Encode temporal dependencies to obtain $H_T$.
+\STATE Apply R-STMF graph adaptation to obtain $H_G$.
+\STATE Inject future ExG through K-AMC to obtain $H_F$.
+\STATE Decode with PI-DCH using Eqs.~(\ref{eq:pidch_gate})--(\ref{eq:pidch_clip}).
+\RETURN $\hat{\mathbf{Y}}$.
+\end{algorithmic}
+\end{algorithm}

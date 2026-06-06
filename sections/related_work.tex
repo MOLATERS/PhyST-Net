@@ -1,35 +1,57 @@
 \section{Related Work}
 \label{sec:related_work}
-The journey of wind power forecasting (WPF) has been a continuous evolution of improving how we model the complex dynamics of the atmosphere and its interaction with wind turbine technology. This section provides a concise review of the technological milestones that inform the development of PhyST-Net.
+This section reviews representative research trajectories pertinent to PhyST-Net. Rather than chronicling models chronologically, we categorize prior literature based on the core modeling challenges inherent to ExG-aware spatio-temporal forecasting: temporal dependency modeling, spatial graph learning, exogenous-variable fusion, and constraint-aware output generation.
 
 \begin{figure}[!t]
 \centering
 \rule{0.48\textwidth}{0.16\textwidth}
-\caption{Technological Timeline of WPF Era. This timeline highlights the transition from statistical foundations to the current physics-aware deep learning era, identifying key architectural breakthroughs.}
+\caption{Technological Timeline of Spatio-Temporal Forecasting. This timeline illustrates the transition from classical statistical foundations to the contemporary physics-aware deep learning era, highlighting pivotal architectural breakthroughs in handling domain constraints.}
 \label{fig:timeline}
 \end{figure}
 
-\subsection{Temporal Sequence Forecasting in WPF}
+\subsection{Temporal Forecasting and Transformer Architectures}
 \label{sec:related_temporal}
-The early evolution of WPF relied primarily on classical linear statistical models, such as Autoregressive Integrated Moving Average (ARIMA) and seasonal variants (SARIMA). While computationally lightweight, these methods assume signal linearity and stationarity, making them ill-suited to capture the turbulent, non-stationary nature of wind signals. SVR and ensemble methods like GBDTs introduced non-linear capacity but were fundamentally spatial-blind and dependent on hand-crafted features, limiting their ability to process high-dimensional spatio-temporal tensors directly.
+Classical statistical forecasting techniques, including autoregressive and state-space models, retain utility when predicting low-dimensional, approximately stationary processes. However, these foundational assumptions become restrictively fragile in graph-structured systems where node dynamics are highly non-linear and persistently coupled with external forcing. While deep recurrent and convolutional architectures improved non-linear sequence modeling via latent state tracking and local temporal filtering, long-horizon forecasting remains challenging due to error accumulation and vanishing gradients over extended time steps.
 
-The rise of deep learning brought recurrent neural networks (RNNs, LSTMs, GRUs) to the forefront, addressing vanishing gradients but introducing sequential bottlenecks for farm-wide optimization. The Transformer architecture \cite{vaswani2017attention} replaced recursion with self-attention, achieving parallelizable training. Models like Informer \cite{zhou2021informer}, Autoformer \cite{wu2021autoformer}, and FEDformer \cite{zhou2022fedformer} reduced complexity or integrated decomposition, yet they frequently focused on global correlations while ignoring local temporal scale structures. To resolve this, PatchTST \cite{nie2023patchtst} and iTransformer \cite{liu2024itransformer} introduced patch-wise processing to preserve semantic information and improve robustness. However, conventional patching uses hard windowing, creating artificial mathematical discontinuities at the boundaries that can distort gradients. Our proposed AGSP module addresses this by introducing learnable Gaussian soft-windows, ensuring that the transition between patches is physically continuous and numerically stable.
+Transformer-based forecasters resolve long-range dependency constraints via self-attention, establishing themselves as the dominant paradigm for deep time-series analysis. Recent variants, utilizing PatchTST-style patching and inverted-dimension attention, significantly reduce computational overhead while enhancing representation learning for multivariate sequences \cite{vaswani2017attention, nie2023patchtst, liu2024itransformer}. Nevertheless, temporal patching is predominantly implemented via rigid, fixed-length windows. In highly non-stationary sequences, physical regime transitions and rapid fluctuations rarely align with these artificial boundaries. PhyST-Net advances this trajectory by introducing AGSP, rendering temporal tokenization fully learnable and mathematically continuous.
 
 \begin{figure}[!t]
 \centering
 \rule{0.48\textwidth}{0.16\textwidth}
-\caption{Attention Maps in Modern WPF Transformers. This visualization demonstrates how multi-head self-attention captures long-range temporal correlations, forming the baseline for our high-capacity temporal tokens.}
+\caption{Attention Maps in Modern Spatio-Temporal Transformers. This visualization demonstrates how multi-head self-attention captures long-range temporal correlations, forming the mathematical baseline for our high-capacity temporal tokens.}
 \label{fig:attention_vis}
 \end{figure}
 
-\subsection{Spatio-Temporal Graph Neural Networks for Wind Power}
-\label{sec:related_spatial}
-Because wind turbines in a farm are physically coupled through the fluid medium, spatial modeling is as important as temporal modeling. Graph neural networks (GNNs) \cite{kipf2017semi, velickovic2018graph} provide the mathematical tools to represent these couplings. Early works combined graph convolutional networks (GCNs) with temporal filters for traffic or energy forecasting \cite{yu2017spatio, wu2019graph}. In the WPF domain, researchers initially used static graphs based on geographical distance \cite{khodayar2019spatio}, which ignore the anisotropic nature of wind flow. This led to adaptive graph learning \cite{ren2023data, bentsen2022spatio} and dual-graph networks \cite{li2024sdg}. Yet, these models often entangle different spatial scales, failing to distinguish localized wake effects from provincial weather fronts. We propose R-STMF to explicitly decouple these spatial scales.
+\subsection{Spatio-Temporal Graph Forecasting}
+\label{sec:related_st_graph}
+Spatio-temporal graph neural networks (STGNNs) capture node interactions via graph convolutions, diffusion propagation, and spatial attention \cite{yu2017spatio, wu2019graph, li2024sdg}. These methodologies are highly effective when cross-node dependencies dictate system behavior, such as in traffic corridors and power grids. Furthermore, adaptive graph learning relaxes the restrictive assumption of a static, fully observable topology, allowing models to infer latent relations directly from data and dynamically adjust propagation patterns.
 
-\subsection{Kolmogorov-Arnold Networks in Scientific Machine Learning}
-\label{sec:related_kan}
-The black-box nature of traditional multi-layer perceptrons (MLPs) has often limited their adoption in critical power system operations. Kolmogorov-Arnold networks (KAN) \cite{liu2024kan} offer a radical departure from the MLP by replacing fixed node-based activations with learnable spline-based activations on the edges. Recent literature \cite{yamak2025review, han2024kan4tsf, vaca2024kan, xu2024kolmogorov} highlights the potential of KANs for capturing high-order physical dynamics with fewer parameters than standard architectures. In our K-AMC layer, we pass NWP features through a KAN to generate modulation parameters, providing a more physics-aligned feature injection mechanism that captures the complex curvatures of the turbine power curve.
+A critical limitation, however, is the widespread reliance on homogeneous propagation protocols across all latent states. In physical systems, spatial dependence is inherently multi-modal; nodes interact through localized proximities, shared environmental influences, and overarching exogenous drivers. A singular adjacency matrix, even if learned dynamically, conflates these distinct mechanisms. R-STMF resolves this by decomposing temporal representations into high-frequency local variations and low-frequency macro-trends, applying targeted, sparse relational propagation to each manifold prior to fusion.
 
-\subsection{Physics-Informed Deep Learning in Renewable Energy}
-\label{sec:related_physics}
-Finally, the transition from purely data-driven to physics-aware models is a key trend in scientific ML. Physics-informed neural networks (PINNs) regularize the learning process by embedding physical laws into the loss function \cite{welsh2025physics, potosnak2024severe}. However, architectural constraints are often more robust than soft loss-based penalties. Our work follows the philosophy of structural physics induction, embedding physical boundaries directly into the network architecture using the PI-DCH layer to guarantee grid compliance \cite{Shi2023UltraShort}.
+\subsection{Exogenous-Variable-Aware Forecasting}
+\label{sec:related_exg}
+Real-world forecasting tasks are intrinsically dependent on exogenous (ExG) variables, such as meteorological forecasts, control schedules, and market indices. Existing predictive models primarily integrate external data through direct feature concatenation, cross-attention mechanisms, or graph-enhanced fusion \cite{zhang2022wpformer, xu2025wind}. While these mechanisms improve accuracy under ideal conditions, they frequently blur the temporal distinction between historical observations and future drivers.
+
+Specifically, historical ExG elucidates recent state trajectories, whereas future ExG provides horizon-level modulation. Merging both into a singular feature tensor complicates data availability reasoning at inference time. Consequently, PhyST-Net structurally decouples historical ExG from future ExG. K-AMC leverages the future-ExG pathway to generate latent modulation parameters, enabling forecast-horizon drivers to dynamically condition graph-enhanced states without being erroneously treated as historical priors.
+
+\subsection{Interpretable Conditional Modeling with KANs}
+\label{sec:related_interpretable_conditioning}
+Interpretability is paramount in operational forecasting, as dispatchers require insight into the primary drivers shaping a prediction. While attention weights and post-hoc attribution methods offer diagnostic utility, they often fail to reflect the model's actual computational pathways. Kolmogorov-Arnold Networks (KAN) \cite{liu2024kan} represent a paradigm shift from traditional perceptrons by modeling transformations via learnable, univariate spline-based edge functions \cite{yamak2025review, han2024kan4tsf, vaca2024kan, xu2024kolmogorov}.
+
+By structuring a conditioning network as an additive sum of feature-wise edge functions, the influence of individual input variables can be analytically inspected through learned basis coefficients and derivatives. PhyST-Net capitalizes on this property within the K-AMC module: future ExG features are mapped to scale and shift parameters via spline functions. While not establishing strict causal identifiability, this architectural alignment provides a transparent, inspectable explanation mechanism far superior to generic dense concatenation.
+
+\subsection{Scalable Spatio-Temporal Forecasting}
+\label{sec:related_scalability}
+Computational scalability is a persistent bottleneck in graph forecasting. Dense spatio-temporal attention scales quadratically with both look-back length and graph cardinality. Conventional mitigation strategies---such as temporal downsampling, rigid patching, and aggressive graph truncation---improve efficiency but risk discarding critical physical dynamics.
+
+PhyST-Net approaches scalability dualistically. First, AGSP compresses the raw temporal dimension into a highly dense sequence of continuous tokens, preserving soft event boundaries while drastically lowering attention overhead. Second, R-STMF employs a sparse Top-$K$ graph propagation scheme, ensuring that node interaction costs scale relative to a parameterized neighborhood size rather than the complete graph matrix. The theoretical complexity analysis detailed in Section~\ref{sec:complexity_analysis} connects these design choices directly to practical deployment constraints.
+
+\subsection{Physics-Informed and Constraint-Aware Forecasting}
+\label{sec:related_constraints}
+Physics-informed learning embeds essential domain knowledge into neural architectures via structural priors, penalty losses, or projection operators. In network forecasting, enforcing such constraints is vital, as system targets are strictly bounded by operational capacities. Unfeasible predictions, regardless of aggregate error metrics, can trigger catastrophic downstream decisions.
+
+Contemporary constraint-aware frameworks predominantly rely on physics-guided loss regularization \cite{liu2026geatformer, potosnak2024severe} or reactive post-hoc clipping \cite{welsh2025physics, PGNNTFT2025}. However, soft penalties do not guarantee compliance, and post-hoc clipping creates a structural disconnect between the trained model and inference behavior. Aligning with the philosophy of structural physics induction \cite{Shi2023UltraShort}, the PI-DCH layer internalizes feasibility operations directly within the forecasting head. By utilizing smooth barrier functions to shape predictions toward a dynamic capacity envelope prior to a final non-linear projection, the constraint pathway becomes an explicit, differentiable component of the computational graph.
+
+\subsection{Position of This Work}
+\label{sec:related_position}
+PhyST-Net synthesizes advancements in Transformer forecasting, adaptive graph learning, and interpretable exogenous conditioning. Its distinguishing factor lies in the rigorous organization of the forecasting interface. Rather than presenting a bespoke, single-domain architecture, this paper formulates a generalized ExG-aware graph prediction framework, subsequently instantiating physically meaningful, domain-specific modules. This methodology ensures PhyST-Net serves both as a state-of-the-art general-purpose model and as a robust, reusable template for domain-constrained network forecasting.

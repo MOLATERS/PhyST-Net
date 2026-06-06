@@ -10,3 +10,4 @@ main.pdf
 # Output and zip should be tracked
 !output/*.pdf
 !*.zip
+reference_pdfs/
