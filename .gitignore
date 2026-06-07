@@ -11,3 +11,4 @@ main.pdf
 !output/*.pdf
 !*.zip
 reference_pdfs/
+.venv/
