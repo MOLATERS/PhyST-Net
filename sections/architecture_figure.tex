@@ -39,10 +39,10 @@
 \node[graph] (rstmf) at (0,-7.2) {\textbf{R-STMF Adapter}\\Relational Spatio-Temporal\\Manifold Fusion};
 \node[latent] (hg) at (0,-8.5) {Graph-enhanced Latent\\$H_G \in \mathbb{R}^{N \times P \times d}$};
 
-\node[cond] (kac) at (0,-9.9) {\textbf{K-AC Module}\\KAN-based Exogenous\\Modulation};
-\node[latent] (hf) at (0,-11.2) {Conditioned Latent\\$H_F \in \mathbb{R}^{N \times P \times d}$};
+\node[cond] (kac) at (0,-9.9) {\textbf{K-AMC Module}\\KAN-based Exogenous\\Modulation};
+\node[latent] (hf) at (0,-11.2) {Conditioned Latent\\$H_F \in \mathbb{R}^{N \times (P+1) \times d}$};
 
-\node[head] (didch) at (0,-12.6) {\textbf{DI-DCH Head}\\Domain-Informed\\Dynamic Capping};
+\node[head] (pidch) at (0,-12.6) {\textbf{PI-DCH Head}\\Physics-Informed\\Dynamic Capping};
 
 \node[input, fill=red!12, draw=red!60!black] (yhat) at (0,-14.3) {\textbf{Network Forecast}\\$\hat{Y} \in \mathbb{R}^{H \times N \times D_y}$};
 
@@ -61,15 +61,15 @@
 \draw[arrow] (rstmf) -- (hg);
 \draw[arrow] (hg) -- (kac);
 \draw[arrow] (kac) -- (hf);
-\draw[arrow] (hf) -- (didch);
-\draw[arrow] (didch) -- (yhat);
+\draw[arrow] (hf) -- (pidch);
+\draw[arrow] (pidch) -- (yhat);
 
 % External Data Arrows
 \draw[dasharrow] (eh.west) -- (agsp.east);
 \draw[dasharrow] (mg.west) -- ++(-1.2,0) |- (agsp.east);
 \draw[dasharrow] (mg.west) -- ++(-1.2,0) |- (rstmf.east);
 \draw[dasharrow] (ef.west) -- (kac.east);
-\draw[dasharrow] (ef.west) -- ++(-1.2,0) |- (didch.east);
+\draw[dasharrow] (ef.west) -- ++(-1.2,0) |- (pidch.east);
 
 % Stage-to-Center Indicators
 \draw[gray!20, thin, dashed] (s1.east) -- (x.west);
@@ -77,7 +77,7 @@
 \draw[gray!20, thin, dashed] (s3.east) -- (stenc.west);
 \draw[gray!20, thin, dashed] (s4.east) -- (rstmf.west);
 \draw[gray!20, thin, dashed] (s5.east) -- (kac.west);
-\draw[gray!20, thin, dashed] (s6.east) -- (didch.west);
+\draw[gray!20, thin, dashed] (s6.east) -- (pidch.west);
 
 % Vertical stage guide
 \draw[gray!30, line width=1pt] (s1.south) -- (s2.north);
@@ -88,9 +88,9 @@
 
 % Technical Details (Positioned in the gutters between tracks)
 \node[detail, draw=orange!40, fill=orange!5] at (3.4, -7.2) {\textbf{R-STMF Details:}\\Local variation $U$\\and Macro trend $R$};
-\node[detail, draw=violet!40, fill=violet!5] at (-3.4, -9.9) {\textbf{K-AC Details:}\\B-spline edge functions\\for $[\gamma, \beta]$ modulation};
+\node[detail, draw=violet!40, fill=violet!5] at (-3.4, -9.9) {\textbf{K-AMC Details:}\\B-spline edge functions\\for $[\gamma, \beta]$ modulation};
 
 \end{tikzpicture}
-\caption{Overall architecture of PhyST-Net. The framework operates as an exogenous-aware vertical pipeline: (I) Multi-modal input interface; (II) AGSP continuous tokenization; (III) Transformer sequence encoding; (IV) R-STMF relational manifold fusion; (V) K-AC spline-based conditioning; and (VI) DI-DCH domain-constrained forecasting. All external data (ExG and Metadata) and technical details are organized in peripheral tracks to ensure a clear and interpretable data flow.}
+\caption{Overall architecture of PhyST-Net. The framework operates as an exogenous-aware vertical pipeline: (I) Multi-modal input interface; (II) AGSP continuous tokenization; (III) Transformer sequence encoding; (IV) R-STMF relational manifold fusion; (V) K-AMC spline-based conditioning; and (VI) PI-DCH domain-constrained forecasting. All external data (ExG and Metadata) and technical details are organized in peripheral tracks to ensure a clear and interpretable data flow.}
 \label{fig:physt_architecture}
 \end{figure*}
