@@ -34,10 +34,10 @@
 \node[latent] (tokens) at (0,-3.1) {Node-patch Tokens\\$Z \in \mathbb{R}^{N \times P \times d}$};
 
 \node[module] (stenc) at (0,-4.5) {\textbf{Temporal Transformer}\\Multi-head Self-Attention\\Backbone};
-\node[latent] (ht) at (0,-5.8) {Temporal Latent\\$H_T \in \mathbb{R}^{N \times P \times d}$};
+\node[latent] (ht) at (0,-5.8) {Temporal Latent\\$H_T \in \mathbb{R}^{N \times (P+1) \times d}$};
 
 \node[graph] (rstmf) at (0,-7.2) {\textbf{R-STMF Adapter}\\Relational Spatio-Temporal\\Manifold Fusion};
-\node[latent] (hg) at (0,-8.5) {Graph-enhanced Latent\\$H_G \in \mathbb{R}^{N \times P \times d}$};
+\node[latent] (hg) at (0,-8.5) {Graph-enhanced Latent\\$H_G \in \mathbb{R}^{N \times (P+1) \times d}$};
 
 \node[cond] (kac) at (0,-9.9) {\textbf{K-AMC Module}\\KAN-based Exogenous\\Modulation};
 \node[latent] (hf) at (0,-11.2) {Conditioned Latent\\$H_F \in \mathbb{R}^{N \times (P+1) \times d}$};
@@ -47,9 +47,10 @@
 \node[input, fill=red!12, draw=red!60!black] (yhat) at (0,-14.3) {\textbf{Network Forecast}\\$\hat{Y} \in \mathbb{R}^{H \times N \times D_y}$};
 
 % --- RIGHT TRACK: EXTERNAL DATA (Moved further right) ---
-\node[input, fill=blue!5] (eh) at (6.8, -1.8) {\textbf{Historical ExG}\\$E_h \in \mathbb{R}^{T \times D_h}$};
+\node[input, fill=blue!5] (eh) at (6.8, -1.8) {\textbf{Historical ExG}\\$\mathbf{E}^h \in \mathbb{R}^{T \times D_h}$};
 \node[input, fill=blue!5] (mg) at (6.8, -4.5) {\textbf{Graph Metadata}\\$M_G$ (Adjacency/Coords)};
-\node[input, fill=blue!5] (ef) at (6.8, -9.9) {\textbf{Future ExG}\\$E_f \in \mathbb{R}^{H \times D_f}$};
+\node[input, fill=blue!5] (ef) at (6.8, -9.9) {\textbf{Future ExG}\\$\mathbf{E}^f \in \mathbb{R}^{H \times D_f}$};
+
 
 % --- CONNECTORS ---
 % Main Path
