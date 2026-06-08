@@ -131,7 +131,10 @@ In the spatial pathway, standard full-graph attention requires $\mathcal{O}(P \c
 \label{sec:optimization}
 To bridge the gap between purely data-driven forecasting and physical feasibility, we minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mse} + \lambda_{\Omega}\mathcal{L}_{penalty}$. The penalty term $\mathcal{L}_{penalty}$ structurally regularizes the model to internalize the operational set $\Omega$ during backpropagation. Using the positive-part operator $[x]^+ \triangleq \max(0, x)$, the penalty is defined as:
 \begin{equation}
-\mathcal{L}_{penalty} = \frac{1}{NH} \sum_{n,t} \left( \underbrace{[-\hat{Y}_{n,t}]^+}_{\text{Non-negativity}} + \underbrace{[\hat{Y}_{n,t} - C_{dyn,n,t}]^+}_{\text{Capacity Limit}} \right).
+\begin{split}
+\mathcal{L}_{penalty} = \frac{1}{NH} \sum_{n,t} \Big( &\underbrace{[-\hat{Y}_{n,t}]^+}_{\text{Non-negativity}} \\
+&+ \underbrace{[\hat{Y}_{n,t} - C_{dyn,n,t}]^+}_{\text{Capacity Limit}} \Big).
+\end{split}
 \label{eq:feasibility_penalty}
 \end{equation}
 This term ensures the model learns to respect physical boundaries natively, thereby reducing the reliance on reactive clipping at inference time. The overall training logic is summarized in Algorithm~\ref{alg:physt_net}.
