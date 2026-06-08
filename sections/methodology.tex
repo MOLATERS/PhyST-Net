@@ -105,19 +105,21 @@ H_F=H_G+\lambda\left(\gamma\odot H_G+\beta-H_G\right).
 
 \subsection{Physics-Informed Dynamic Capping Head (PI-DCH)}
 \label{sec:pidch}
-PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$. In mission-critical environments such as smart grids, safety-critical traffic routing, and industrial control systems, deploying generative or predictive models mandates rigorous output-space guidance to preclude physically unfeasible trajectories. PI-DCH achieves this by systematically steering latent predictions toward a dynamic feasible envelope $C_{dyn}$ prior to the enforcement of a strict physical boundary. 
+PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$. In mission-critical environments such as smart grids, safety-critical traffic routing, and industrial control systems, deploying predictive models mandates rigorous output-space guidance to preclude physically unfeasible trajectories. While hard projection operators (e.g., clipping) guarantee bounded outputs, they inevitably induce severe gradient vanishing (zero gradients outside the feasible region) during backpropagation, crippling the learning process.
 
-Specifically, a linear decoder first generates an unconstrained predictive tensor $\tilde{Y} = \operatorname{Linear}(H_F)$. Concurrently, a learned barrier gate $u=\sigma(g(H_F))$ modulates this prediction smoothly:
+PI-DCH circumvents this by systematically steering latent predictions toward a dynamic feasible envelope $C_{dyn}$ via a differentiable barrier before applying the strict physical boundary. Specifically, a linear decoder first generates an unconstrained predictive tensor $\tilde{Y} = \operatorname{Linear}(H_F)$. Concurrently, a learned barrier gate $u=\sigma(g(H_F))$ modulates this prediction smoothly:
 \begin{equation}
 \hat{Y}_{soft}=\tilde{Y}+u\odot(C_{dyn}-\tilde{Y}).
 \label{eq:pidch_gate}
 \end{equation}
-During the training phase, this soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss, guaranteeing that gradients backpropagate natively through the constraint-shaping logic. The definitive feasible forecast $\hat{Y}$ is subsequently derived via a non-linear projection:
+Crucially, during the training phase, this differentiable soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss ($\mathcal{L}_{mse}$) and the penalty ($\mathcal{L}_{penalty}$). This guarantees that gradients backpropagate natively through the constraint-shaping logic, entirely avoiding the zero-gradient trap. 
+
+The definitive feasible forecast $\hat{Y}$ is subsequently derived via a non-linear hard projection:
 \begin{equation}
 \hat{Y}=\operatorname{clip}(\hat{Y}_{soft},0,C_{dyn}).
 \label{eq:pidch_clip}
 \end{equation}
-This physics-informed projection is stringently enforced during inference, mathematically guaranteeing absolute operational feasibility without resorting to opaque, post-hoc heuristic corrections.
+This physics-informed projection is stringently enforced during inference, mathematically guaranteeing absolute operational feasibility.
 
 \subsection{Computational Complexity Analysis}
 \label{sec:complexity_analysis}
