@@ -58,11 +58,12 @@ where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$
 
 \subsection{Temporal Representation Learning}
 \label{sec:temporal_encoder}
-The token tensor $Z$ is passed to a Transformer encoder to learn dependencies among the $P$ tokens of each node:
+The token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$. This global token acts as a sequence-level memory bottleneck, aggregating macro-trend representations across all temporal windows to facilitate efficient long-range context fusion. The augmented tensor $[z_{global} || Z]$ is then passed to a Transformer encoder to learn temporal dependencies:
 \begin{equation}
-H_T=\operatorname{STEnc}(Z), \quad H_T\in\mathbb{R}^{B\times N\times P\times d},
+H_T=\operatorname{STEnc}([z_{global} || Z]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
 \label{eq:temporal_encoder}
 \end{equation}
+After temporal encoding, the updated global token is stripped from the sequence, ensuring the output shape remains compatible with subsequent graph adapters while retaining the enriched macro-context within the temporal patches.
 
 \subsection{Relational Spatio-Temporal Manifold Fusion}
 \label{sec:rstmf}
