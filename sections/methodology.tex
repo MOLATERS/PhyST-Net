@@ -58,44 +58,53 @@ where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$
 
 \subsection{Temporal Representation Learning}
 \label{sec:temporal_encoder}
-The token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$. This global token acts as a sequence-level memory bottleneck, aggregating macro-trend representations across all temporal windows to facilitate efficient long-range context fusion. The augmented tensor $[z_{global} || Z]$ is then passed to a Transformer encoder to learn temporal dependencies:
+Inspired by the TimeXer architecture \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., overarching weather fronts or traffic trends) across all local patches. The augmented tensor $[z_{global} || Z]$ is then processed by a Transformer encoder to learn temporal dependencies:
 \begin{equation}
 H_T=\operatorname{STEnc}([z_{global} || Z]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
 \label{eq:temporal_encoder}
 \end{equation}
-After temporal encoding, the updated global token is stripped from the sequence, ensuring the output shape remains compatible with subsequent graph adapters while retaining the enriched macro-context within the temporal patches.
+Crucially, rather than discarding the global token post-encoding, PhyST-Net structurally leverages it to separate the node's state into two distinct manifolds: a macro-trend global state $R \triangleq H_{T,0}$ and a local-variation patch state $U \triangleq H_{T,1:P}$.
 
-\subsection{Relational Spatio-Temporal Manifold Fusion}
+\subsection{Relational Spatio-Temporal Manifold Fusion (R-STMF)}
 \label{sec:rstmf}
-R-STMF serves as the graph adapter, mapping $H_T$ to $H_G$. In many systems, spatial dependence contains multiple mechanisms. R-STMF addresses this by decomposing the temporal state along the patch axis:
+R-STMF serves as the graph adapter. In physical systems, spatial dependence is multi-modal: nodes interact through shared environmental trends (macro) and localized proximities (micro). By utilizing the explicitly decoupled manifolds $R$ (global token) and $U$ (patch tokens), R-STMF avoids conflating these mechanisms.
+
+For each branch $c\in\{U,R\}$, relational attention scores across nodes are computed independently:
 \begin{equation}
-U=\operatorname{DWConv}_{\tau}(H_T), \quad R=H_T-U,
-\label{eq:rstmf_decomp}
-\end{equation}
-where $\operatorname{DWConv}_{\tau}$ is a depth-wise temporal convolution. In our framework, $U$ and $R$ are treated as components capturing local-variation-like and lower-frequency residual features, respectively. For each branch $c\in\{U,R\}$ and patch $p$, relational attention scores are computed as
-\begin{equation}
-S_c^{(p)}=\frac{Q_c^{(p)}(K_c^{(p)})^{\top}}{\sqrt{d_m}}+\mathcal{B}_0,
+S_c=\frac{Q_c(K_c)^{\top}}{\sqrt{d_m}}+\mathcal{B}_0,
 \label{eq:rstmf_score}
 \end{equation}
-where $\mathcal{B}_0$ is a graph prior bias.
+where $\mathcal{B}_0$ is a graph prior bias. This asymmetric design is highly efficient: the macro-graph propagation relies exclusively on the single global token $R$, capturing system-wide correlations at a fraction of the computational cost, while the micro-graph propagation on $U$ maintains local temporal fidelity.
 
 \subsubsection{Relational Pruning and Masking}
-To enforce spatial locality and reduce computation, R-STMF employs a Top-$K$ pruning strategy. The attention matrix $A_c^{(p)}$ is computed by masking out elements that are not among the $K_c$ largest scores:
+To enforce spatial locality and reduce computation, R-STMF employs a Top-$K$ pruning strategy. The attention matrix $A_c$ is computed by masking out elements that are not among the $K_c$ largest scores:
 \begin{equation}
 \operatorname{Mask}(S, K)_{ij} = \begin{cases} S_{ij} & \text{if } S_{ij} \in \text{TopK}(S_i, K) \\ -\infty & \text{otherwise} \end{cases},
 \label{eq:rstmf_mask}
 \end{equation}
 \begin{equation}
-A_c^{(p)}=\operatorname{Softmax}\left(\operatorname{Mask}(S_c^{(p)}, K_c)\right).
+A_c=\operatorname{Softmax}\left(\operatorname{Mask}(S_c, K_c)\right).
 \label{eq:rstmf_topk}
 \end{equation}
-This ensures that node $i$ only aggregates information from its $K$ most relevant neighbors, acting as a structural regularizer against transient noise.
+After spatial propagation, the global and patch tokens are fused to form the graph-enhanced latent state $H_G$.
 
 \subsection{Future-ExG Conditioning (K-AMC)}
 \label{sec:kamc}
-K-AMC injects future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. A critical step is aligning the horizon-wise drivers with the patch-wise latent states. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{P \times d_{exg}}$ that maps the $H$ future steps into $P$ exogenous tokens via temporal pooling or a linear projection. The aligned representation $\bar{\mathbf{E}}^f$ is then passed through a KAN block to produce modulation parameters:
+K-AMC injects future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. Aligning with the TimeXer philosophy \cite{wang2024timexer}, the macro-trend global token acts as the primary bridge to cross-attend and ingest external factors. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{(P+1) \times d_{exg}}$ that maps the future horizon into variate tokens corresponding to the global and patch states. 
+
+The aligned representation $\bar{\mathbf{E}}^f$ is then passed through a Kolmogorov-Arnold Network (KAN) block. Unlike standard MLPs, KANs parameterize transformations using learnable univariate B-spline functions on the edges. For an input feature $x$, the edge function is defined as:
 \begin{equation}
-[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f), \quad \gamma, \beta \in \mathbb{R}^{B \times N \times P \times d}.
+\phi(x) = w_b \operatorname{SiLU}(x) + \sum_{i=1}^{k} c_i B_i(x),
+\label{eq:kan_edge_sum}
+\end{equation}
+where $B_i(x)$ are B-spline basis functions. The analytical derivative is:
+\begin{equation}
+\frac{\partial \phi(x)}{\partial x} = w_b \operatorname{SiLU}'(x) + \sum_{i=1}^{k} c_i B'_i(x).
+\label{eq:kan_derivative}
+\end{equation}
+By aggregating these edge functions, the KAN block produces modulation parameters:
+\begin{equation}
+[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f), \quad \gamma, \beta \in \mathbb{R}^{B \times N \times (P+1) \times d}.
 \label{eq:kamc_kan}
 \end{equation}
 The conditioned latent state is then obtained via element-wise scale and shift:
