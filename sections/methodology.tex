@@ -129,9 +129,9 @@ In the spatial pathway, standard full-graph attention requires $\mathcal{O}(P \c
 
 \subsection{Optimization Objective}
 \label{sec:optimization}
-The training objective is $\mathcal{L}=\mathcal{L}_{mse}+\lambda_{\Omega}\mathcal{L}_{penalty}$. We define the feasibility penalty $\mathcal{L}_{penalty}$ to penalize violations of the operational envelope:
+The training objective is $\mathcal{L}=\mathcal{L}_{mse}+\lambda_{\Omega}\mathcal{L}_{penalty}$. We define the feasibility penalty $\mathcal{L}_{penalty}$ using the positive-part operator $[x]^+ \triangleq \max(0, x)$ to penalize violations of the operational envelope:
 \begin{equation}
-\mathcal{L}_{penalty} = \frac{1}{N H} \sum_{n,t} \left[ \max(0, -\hat{Y}_{n,t}) + \max(0, \hat{Y}_{n,t} - C_{dyn,n,t}) \right].
+\mathcal{L}_{penalty} = \frac{1}{N H} \sum_{n,t} \left( [-\hat{Y}_{n,t}]^+ + [\hat{Y}_{n,t} - C_{dyn,n,t}]^+ \right).
 \label{eq:feasibility_penalty}
 \end{equation}
 This term ensures the model learns to stay within the feasible set $\Omega$ before the final clipping operation. Algorithm~\ref{alg:physt_net} summarizes the forward pass.
