@@ -58,7 +58,7 @@ where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$
 
 \subsection{Temporal Representation Learning}
 \label{sec:temporal_encoder}
-Inspired by the TimeXer architecture \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., overarching weather fronts or traffic trends) across all local patches. The augmented tensor $[z_{global} || Z]$ is then processed by a Transformer encoder to learn temporal dependencies:
+Inspired by the TimeXer architecture \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., shared external regimes or system-wide traffic trends) across all local patches. The augmented tensor $[z_{global} || Z]$ is then processed by a Transformer encoder to learn temporal dependencies:
 \begin{equation}
 H_T=\operatorname{STEnc}([z_{global} || Z]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
 \label{eq:temporal_encoder}
@@ -90,7 +90,7 @@ This ensures that node $i$ adaptively filters its dependency graph, aggregating 
 
 \subsection{Future-ExG Conditioning (K-AMC)}
 \label{sec:kamc}
-K-AMC injects future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. Aligning with the TimeXer philosophy \cite{wang2024timexer}, the macro-trend global token acts as the primary bridge to cross-attend and ingest external factors. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{(P+1) \times d_{exg}}$ that maps the future horizon into variate tokens corresponding to the global and patch states. 
+K-AMC injects future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. While we preserve the acronym K-AMC (KAN-enhanced Adaptive Modulation and Conditioning) for historical continuity, the module serves as a generalized interface for any known systemic drivers. Aligning with the TimeXer philosophy \cite{wang2024timexer}, the macro-trend global token acts as the primary bridge to cross-attend and ingest external factors. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{(P+1) \times d_{exg}}$ that maps the future horizon into variate tokens corresponding to the global and patch states. 
 
 The aligned representation $\bar{\mathbf{E}}^f$ is then passed through a Kolmogorov-Arnold Network (KAN) block. Unlike standard MLPs, KANs parameterize transformations using learnable univariate B-spline functions on the edges. For an input feature $x$, the edge function is defined as:
 \begin{equation}
@@ -122,14 +122,14 @@ PI-DCH circumvents this by systematically steering latent predictions toward a d
 \hat{Y}_{soft}=\tilde{Y}+u\odot(C_{dyn}-\tilde{Y}).
 \label{eq:pidch_gate}
 \end{equation}
-Crucially, during the training phase, this differentiable soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss ($\mathcal{L}_{mse}$) and the penalty ($\mathcal{L}_{penalty}$). This guarantees that gradients backpropagate natively through the constraint-shaping logic, entirely avoiding the zero-gradient trap. 
+Crucially, during the training phase, this differentiable soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss ($\mathcal{L}_{mse}$) and the penalty ($\mathcal{L}_{penalty}$). This guarantees that gradients backpropagate natively through the constraint-shaping logic, mitigating the train-inference mismatch of naive clipping. 
 
 The definitive feasible forecast $\hat{Y}$ is subsequently derived via a non-linear hard projection:
 \begin{equation}
 \hat{Y}=\operatorname{clip}(\hat{Y}_{soft},0,C_{dyn}).
 \label{eq:pidch_clip}
 \end{equation}
-This physics-informed projection is stringently enforced during inference, mathematically guaranteeing absolute operational feasibility.
+This physics-informed projection is stringently enforced during inference, enforcing bounded feasibility with respect to the specified envelope.
 
 \subsection{Computational Complexity Analysis}
 \label{sec:complexity_analysis}
