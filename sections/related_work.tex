@@ -16,11 +16,11 @@ A critical limitation, however, is the widespread reliance on homogeneous propag
 
 \begin{figure}[!t]
 \centering
-\begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth]
-    % Data Flow Comparison Placeholder
-    \draw[dashed, fill=gray!5] (0,0) rectangle (8.5, 2.5);
-    \node[align=center] at (4.25, 1.25) {\textbf{Visual Placeholder: Data-Flow Interface Comparison}\\(a) Traditional Methods: Concatenate History + Future ExG into backbone.\\(b) PhyST-Net: Decoupled paths (History $\rightarrow$ Temporal, Future ExG $\rightarrow$ K-AMC).};
-\end{tikzpicture}
+% \begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth]
+%     % Data Flow Comparison Placeholder
+%     \draw[dashed, fill=gray!5] (0,0) rectangle (8.5, 2.5);
+%     \node[align=center] at (4.25, 1.25) {\textbf{Visual Placeholder: Data-Flow Interface Comparison}\\(a) Traditional Methods: Concatenate History + Future ExG into backbone.\\(b) PhyST-Net: Decoupled paths (History $\rightarrow$ Temporal, Future ExG $\rightarrow$ K-AMC).};
+% \end{tikzpicture}
 \caption{Comparison of Exogenous Variable Fusion Interfaces. (a) Standard forecasting models frequently concatenate historical data and future drivers early in the network, increasing the risk of temporal leakage and confounding latent representation learning. (b) PhyST-Net explicitly decouples these data flows, reserving future drivers exclusively for horizon-level conditioning via the K-AMC module.}
 \label{fig:interface_comparison}
 \end{figure}
@@ -53,4 +53,4 @@ Contemporary constraint-aware frameworks predominantly rely on physics-guided lo
 
 \subsection{Position of This Work}
 \label{sec:related_position}
-PhyST-Net synthesizes advancements in Transformer forecasting, adaptive graph learning, and interpretable exogenous conditioning. Its distinguishing factor lies in the rigorous organization of the forecasting interface. Rather than presenting a bespoke, single-domain architecture, this paper formulates a generalized ExG-aware graph prediction framework, subsequently instantiating physically meaningful, domain-specific modules. This methodology ensures PhyST-Net serves both as a state-of-the-art general-purpose model and as a robust, reusable template for domain-constrained network forecasting.
+PhyST-Net synthesizes advancements in Transformer forecasting, adaptive graph learning, and interpretable exogenous conditioning. Its distinguishing factor lies in the rigorous organization of the forecasting interface. Rather than presenting a bespoke, single-domain architecture, this paper formulates a generalized ExG-aware graph prediction framework, subsequently instantiating physically meaningful, domain-specific modules. This methodology ensures PhyST-Net serves as a robust, reusable framework for domain-constrained network forecasting.a robust, reusable template for domain-constrained network forecasting.ecasting.
