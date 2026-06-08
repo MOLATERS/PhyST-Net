@@ -1,33 +1,3 @@
-\section{Discussion and Qualitative Analysis}
+\section{Discussion}
 \label{sec:discussion}
-The reported results support the view that PhyST-Net is best understood as an ExG-aware spatio-temporal graph Transformer with a wind-specific physical instantiation. This section discusses the modeling implications, optimization effects, and the remaining validation gaps.
-
-\subsection{Optimization Effect of Relational Pruning}
-\label{sec:pruning_discussion}
-The relational pruning strategy in R-STMF is not merely a computational heuristic for large graphs; it is a fundamental denoising mechanism. In wind farms, especially those in complex terrain (e.g., the HoT site), SCADA data often contains spurious cross-turbine correlations caused by sensor noise or localized turbulence that does not represent the macro wind field. By enforcing Top-$K$ sparsity, R-STMF forces the model to ignore these low-magnitude, high-frequency dependencies. 
-
-Our preliminary analysis (see Fig.~\ref{fig:pruning_effect_placeholder}) suggests that as $K$ decreases, the model's stability during long-horizon forecasts improves. When $K$ is too large (approaching dense attention), the model tends to "over-smooth" the node-level states, losing the specific high-resolution details of individual turbine responses. Conversely, an optimally pruned graph adapter captures the essential propagation pathways—the "spatial backbone" of the wind farm—while maintaining a low computational footprint. This behavior aligns with the physical intuition that wind information propagates along dominant streamlines rather than diffusing uniformly across the entire farm.
-
-\subsection{ExG as a Model Interface}
-\label{sec:exg_interface_discussion}
-A key design choice is to make exogenous variables explicit. Historical SCADA variables and future NWP-like variables serve different roles: the former explains recent operating context, while the latter conditions the forecast horizon. By separating historical ExG from future ExG, PhyST-Net avoids treating all covariates as a single feature block. This design is important for WPF, but it is also relevant to other graph forecasting tasks where future external drivers are known or forecast, such as traffic calendars, load schedules, weather forecasts, or planned control signals.
-
-\subsection{Interpretability and Efficiency Trade-offs in K-AC}
-\label{sec:kac_tradeoff}
-K-AC introduces KAN-based modulation, which offers a unique trade-off between expressive power and transparency. While traditional MLPs can approximate any function, their ``black-box'' nature makes it difficult for operators to trust the model's reaction to extreme exogenous forecasts. KAN's additive spline structure allows for a feature-wise decomposition: one can visualize exactly how a 20\% increase in a forecast driver scales the latent node representations.
-
-However, this interpretability comes at a cost. Evaluating B-splines is more computationally intensive than simple matrix multiplications, especially when the number of spline bases $M$ or the input dimension $D_f$ is large. In our complexity analysis (Section~\ref{sec:complexity}), we noted that K-AC's cost scales with $M$. In practice, we found that a small $M$ (e.g., 3 to 5) is often sufficient to capture the relevant operating regimes without significantly impacting inference latency. This suggests that K-AC is most effective when used as a ``surgical'' conditioning module rather than a replacement for all dense layers in the network.
-
-\subsection{Aesthetic and Structural Integrity of the Forecast}
-\label{sec:forecast_integrity}
-Beyond numerical metrics like RMSE and MAE, the ``integrity'' of the forecast---its physical or operational plausibility---is crucial for decision-making. Standard STGNNs often produce ``jittery'' forecasts or predictions that exceed the physical capacity of the node during extreme events. DI-DCH addresses this by injecting the capacity envelope directly into the decoding process. This ensures that the generated time series is not only accurate on average but also structurally sound: it respects non-negativity and does not exceed rated limits. Such structural consistency reduces the need for heuristic post-processing and makes the model output directly compatible with downstream optimization tools.
-
-\subsection{Temporal Continuity in Tokenization}
-\label{sec:tokenization_role}
-Adaptive Gaussian-soft-windowed Patching (AGSP) provides a continuous alternative to hard temporal segmentation. The validation on small-scale networks supports its value, while larger datasets show mixed results under current runs. This suggests that AGSP should be interpreted as a tokenization mechanism that can reduce boundary artifacts and improve smooth event representation. By allowing the temporal receptive fields to overlap and adapt, the model can ``track'' moving fronts across tokens more effectively than fixed-window methods.
-
-\subsection{Generalization and Future Work}
-\label{sec:future_work}
-The proposed formulation is designed to be general-purpose. Candidate applications include traffic flow forecasting, electric load forecasting, photovoltaic generation, air-quality prediction, and distributed industrial sensing. 
-
-Several avenues remain for future exploration. First, while K-AC provides a path toward interpretability, a more rigorous causal analysis of the learned spline functions would strengthen the grounding of the model. Second, the current version of PhyST-Net is a point-forecasting model; extending it to produce probabilistic intervals is essential for risk-aware operation. Finally, investigating the model's robustness to exogenous uncertainty---specifically how errors in future ExG propagate through the K-AC modulation---will be critical for real-world deployment.
+% TODO: In-depth discussion of results, computational efficiency, and limitations will be added here.
