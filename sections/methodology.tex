@@ -21,6 +21,20 @@ H_F = \Phi_{exg}(H_G,\mathbf{E}^{f}),\quad \hat{\mathbf{Y}} = \Phi_{head}(H_F,\m
 \end{equation}
 where $\Phi_{patch}$ is AGSP, $\Phi_{temp}$ is the temporal Transformer encoder, $\Phi_{graph}$ is the graph adapter, $\Phi_{exg}$ is future-ExG conditioning (K-AMC), and $\Phi_{head}$ is the physics-informed prediction head (PI-DCH). This decomposition emphasizes that the architectural backbone is defined on generic graph-structured sequences, while domain-specific knowledge is encapsulated in the input interface and the constraint head.
 
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth]
+    % Micro Modules Placeholder
+    \draw[dashed, fill=orange!5] (0,0) rectangle (4.1, 2.5);
+    \node[align=center, text width=3.8cm] at (2.05, 1.25) {\textbf{(a) AGSP Detail}\\Soft overlapping Gaussians vs. Rigid Hard Patches.};
+    
+    \draw[dashed, fill=blue!5] (4.4,0) rectangle (8.5, 2.5);
+    \node[align=center, text width=3.8cm] at (6.45, 1.25) {\textbf{(b) K-AMC Detail}\\B-Spline parameterization mapping Future ExG to $\gamma, \beta$.};
+\end{tikzpicture}
+\caption{Internal mechanics of highly coupled modules. (a) AGSP replaces discrete sequence chunking with continuous, differentiable density windows, mitigating boundary artifacts. (b) K-AMC leverages Kolmogorov-Arnold Networks (KAN) to map future exogenous features into dynamic scale ($\gamma$) and shift ($\beta$) parameters for conditional modulation.}
+\label{fig:micro_modules}
+\end{figure}
+
 \subsection{Adaptive Gaussian-soft-windowed Patching}
 \label{sec:agsp}
 Transformer-based forecasters conventionally mitigate sequence length by aggregating observations into discrete temporal patches. While computationally convenient, fixed non-overlapping patches inevitably induce boundary artifacts when the underlying physical signal transverses a patch boundary. Aligning with emerging principles in complexity-balanced sequence modeling---where representational capacity is dynamically distributed proportional to signal variation---AGSP supersedes rigid patch assignments with learnable Gaussian soft-windows. This differentiable formulation empowers the architecture to autonomously allocate dense receptive fields to highly transient events and broader, smoother fields to stable operational regimes.

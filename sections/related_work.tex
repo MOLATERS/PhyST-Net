@@ -2,25 +2,11 @@
 \label{sec:related_work}
 This section reviews representative research trajectories pertinent to PhyST-Net. Rather than chronicling models chronologically, we categorize prior literature based on the core modeling challenges inherent to ExG-aware spatio-temporal forecasting: temporal dependency modeling, spatial graph learning, exogenous-variable fusion, and constraint-aware output generation.
 
-\begin{figure}[!t]
-\centering
-\rule{0.48\textwidth}{0.16\textwidth}
-\caption{Technological Timeline of Spatio-Temporal Forecasting. This timeline illustrates the transition from classical statistical foundations to the contemporary physics-aware deep learning era, highlighting pivotal architectural breakthroughs in handling domain constraints.}
-\label{fig:timeline}
-\end{figure}
-
 \subsection{Temporal Forecasting and Transformer Architectures}
 \label{sec:related_temporal}
 Classical statistical forecasting techniques, including autoregressive and state-space models, retain utility when predicting low-dimensional, approximately stationary processes. However, these foundational assumptions become restrictively fragile in graph-structured systems where node dynamics are highly non-linear and persistently coupled with external forcing. While deep recurrent and convolutional architectures improved non-linear sequence modeling via latent state tracking and local temporal filtering, long-horizon forecasting remains challenging due to error accumulation and vanishing gradients over extended time steps.
 
 Transformer-based forecasters resolve long-range dependency constraints via self-attention, establishing themselves as the dominant paradigm for deep time-series analysis. Recent variants, utilizing PatchTST-style patching and inverted-dimension attention, significantly reduce computational overhead while enhancing representation learning for multivariate sequences \cite{vaswani2017attention, nie2023patchtst, liu2024itransformer}. Nevertheless, temporal patching is predominantly implemented via rigid, fixed-length windows. In highly non-stationary sequences, physical regime transitions and rapid fluctuations rarely align with these artificial boundaries. PhyST-Net advances this trajectory by introducing AGSP, rendering temporal tokenization fully learnable and mathematically continuous.
-
-\begin{figure}[!t]
-\centering
-\rule{0.48\textwidth}{0.16\textwidth}
-\caption{Attention Maps in Modern Spatio-Temporal Transformers. This visualization demonstrates how multi-head self-attention captures long-range temporal correlations, forming the mathematical baseline for our high-capacity temporal tokens.}
-\label{fig:attention_vis}
-\end{figure}
 
 \subsection{Spatio-Temporal Graph Forecasting}
 \label{sec:related_st_graph}
@@ -28,11 +14,22 @@ Spatio-temporal graph neural networks (STGNNs) capture node interactions via gra
 
 A critical limitation, however, is the widespread reliance on homogeneous propagation protocols across all latent states. In physical systems, spatial dependence is inherently multi-modal; nodes interact through localized proximities, shared environmental influences, and overarching exogenous drivers. A singular adjacency matrix, even if learned dynamically, conflates these distinct mechanisms. R-STMF resolves this by decomposing temporal representations into high-frequency local variations and low-frequency macro-trends, applying targeted, sparse relational propagation to each manifold prior to fusion.
 
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth]
+    % Data Flow Comparison Placeholder
+    \draw[dashed, fill=gray!5] (0,0) rectangle (8.5, 2.5);
+    \node[align=center] at (4.25, 1.25) {\textbf{Visual Placeholder: Data-Flow Interface Comparison}\\(a) Traditional Methods: Concatenate History + Future ExG into backbone.\\(b) PhyST-Net: Decoupled paths (History $\rightarrow$ Temporal, Future ExG $\rightarrow$ K-AMC).};
+\end{tikzpicture}
+\caption{Comparison of Exogenous Variable Fusion Interfaces. (a) Standard forecasting models frequently concatenate historical data and future drivers early in the network, increasing the risk of temporal leakage and confounding latent representation learning. (b) PhyST-Net explicitly decouples these data flows, reserving future drivers exclusively for horizon-level conditioning via the K-AMC module.}
+\label{fig:interface_comparison}
+\end{figure}
+
 \subsection{Exogenous-Variable-Aware Forecasting}
 \label{sec:related_exg}
 Real-world forecasting tasks are intrinsically dependent on exogenous (ExG) variables, such as meteorological forecasts, control schedules, and market indices. Existing predictive models primarily integrate external data through direct feature concatenation, cross-attention mechanisms, or graph-enhanced fusion \cite{zhang2022wpformer, xu2025wind}. While these mechanisms improve accuracy under ideal conditions, they frequently blur the temporal distinction between historical observations and future drivers.
 
-Specifically, historical ExG elucidates recent state trajectories, whereas future ExG provides horizon-level modulation. Merging both into a singular feature tensor complicates data availability reasoning at inference time. Consequently, PhyST-Net structurally decouples historical ExG from future ExG. K-AMC leverages the future-ExG pathway to generate latent modulation parameters, enabling forecast-horizon drivers to dynamically condition graph-enhanced states without being erroneously treated as historical priors.
+Specifically, historical ExG elucidates recent state trajectories, whereas future ExG provides horizon-level modulation. Merging both into a singular feature tensor complicates data availability reasoning at inference time. Consequently, PhyST-Net structurally decouples historical ExG from future ExG (as illustrated in Fig.~\ref{fig:interface_comparison}). K-AMC leverages the future-ExG pathway to generate latent modulation parameters, enabling forecast-horizon drivers to dynamically condition graph-enhanced states without being erroneously treated as historical priors.
 
 \subsection{Interpretable Conditional Modeling with KANs}
 \label{sec:related_interpretable_conditioning}
