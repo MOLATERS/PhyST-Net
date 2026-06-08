@@ -46,8 +46,10 @@ where $\Omega$ denotes domain knowledge. In spatio-temporal node prediction, $\O
 
 Given a training set $\mathcal{D}$, the supervised objective is
 \begin{equation}
-\min_{\theta}\; \frac{1}{|\mathcal{D}|}\sum_{(\mathbf{X},\mathbf{E}^h,\mathbf{E}^f,A,M_G,\mathbf{Y})\in\mathcal{D}}
-\ell\left(\hat{\mathbf{Y}},\mathbf{Y}\right) + \lambda_{\Omega}\mathcal{R}_{\Omega}(\hat{\mathbf{Y}},\mathbf{Y}),
+\begin{split}
+\min_{\theta}\; \frac{1}{|\mathcal{D}|}\sum_{(\mathbf{X}, \dots, \mathbf{Y})\in\mathcal{D}}
+\Big[ \ell\big(\hat{\mathbf{Y}},\mathbf{Y}\big) + \lambda_{\Omega}\mathcal{R}_{\Omega}(\hat{\mathbf{Y}},\mathbf{Y}) \Big],
+\end{split}
 \label{eq:optimization_objective}
 \end{equation}
-where $\ell(\cdot)$ is a forecasting loss, $\mathcal{R}_{\Omega}$ is an optional constraint-aware regularizer, and $\lambda_{\Omega}$ controls its strength. The formulation does not require a specific graph operator; any module that maps temporal node states to graph-enhanced node states can be used as the graph adapter.
+where $(\mathbf{X}, \dots, \mathbf{Y})$ denotes a data sample tuple, $\ell(\cdot)$ is a forecasting loss, $\mathcal{R}_{\Omega}$ is an optional constraint-aware regularizer, and $\lambda_{\Omega}$ controls its strength. The formulation does not require a specific graph operator; any module that maps temporal node states to graph-enhanced node states can be used as the graph adapter.
