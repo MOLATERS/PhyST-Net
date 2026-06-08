@@ -151,14 +151,35 @@ This decoupled formulation ensures the model learns to respect physical boundari
 \caption{PhyST-Net Forward Pass}
 \label{alg:physt_net}
 \begin{algorithmic}[1]
-\REQUIRE $\mathbf{X},\mathbf{E}^h,\mathbf{E}^f,A,M_G$.
-\ENSURE $\hat{\mathbf{Y}}$.
-\STATE Embed historical target states and historical ExG.
-\STATE Construct AGSP tokens $Z$ using Eqs.~(\ref{eq:agsp_norm})--(\ref{eq:agsp_token}).
-\STATE Encode temporal dependencies to obtain $H_T$.
-\STATE Apply R-STMF graph adaptation to obtain $H_G$.
-\STATE Inject future ExG through K-AMC to obtain $H_F$.
-\STATE Decode with PI-DCH using Eqs.~(\ref{eq:pidch_gate})--(\ref{eq:pidch_clip}).
+\REQUIRE Historical states $\mathbf{X}$, Historical ExG $\mathbf{E}^h$, Future ExG $\mathbf{E}^f$, Graph $A$, Metadata $M_G$.
+\ENSURE Feasible network forecast $\hat{\mathbf{Y}}$.
+
+\STATE \COMMENT{\textit{Phase I: AGSP Continuous Tokenization}}
+\STATE Initialize learnable Gaussian parameters $\mu_i, \sigma_i$ for $P$ tokens.
+\FOR{each token $i \in \{1,\ldots,P\}$}
+    \STATE Compute soft-window weights $W_i(\tau) = \exp\left(-\frac{(\tau-\mu_i)^2}{2\sigma_i^2+\epsilon}\right)$.
+    \STATE Aggregate $\mathbf{X}$ and $\mathbf{E}^h$ via $W_i(\tau)$ to form continuous token $Z_{:,i,:}$.
+\ENDFOR
+
+\STATE \COMMENT{\textit{Phase II: Temporal Encoding}}
+\STATE Process $Z$ via Multi-Head Self-Attention to capture temporal dependencies $\to H_T$.
+
+\STATE \COMMENT{\textit{Phase III: R-STMF Graph Adaptation}}
+\STATE Decompose $H_T$ into macro-trend $R$ and local-variation $U$ manifolds.
+\STATE Apply Top-$K$ sparse masking to $A$ based on spatial similarities.
+\STATE Propagate $R$ and $U$ over the masked graph and fuse $\to H_G$.
+
+\STATE \COMMENT{\textit{Phase IV: K-AMC Exogenous Modulation}}
+\STATE Align horizon-wise $\mathbf{E}^f$ to patch-wise representation $\bar{\mathbf{E}}^f$.
+\STATE Compute B-spline edge functions via KAN block to generate $[\gamma, \beta]$.
+\STATE Modulate latent states: $H_F \leftarrow H_G + \lambda(\gamma \odot H_G + \beta - H_G)$.
+
+\STATE \COMMENT{\textit{Phase V: PI-DCH Constraint Decoding}}
+\STATE Decode unconstrained prediction $\tilde{Y} = \operatorname{Linear}(H_F)$.
+\STATE Compute barrier gate $u = \sigma(g(H_F))$ to steer toward dynamic envelope $C_{dyn}$.
+\STATE Shape prediction softly: $\hat{Y}_{soft} \leftarrow \tilde{Y} + u \odot (C_{dyn} - \tilde{Y})$.
+\STATE Project to feasible set: $\hat{\mathbf{Y}} \leftarrow \operatorname{clip}(\hat{Y}_{soft}, 0, C_{dyn})$.
+
 \RETURN $\hat{\mathbf{Y}}$.
 \end{algorithmic}
 \end{algorithm}
