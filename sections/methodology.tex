@@ -115,7 +115,7 @@ H_F=H_G+\lambda\left(\gamma\odot H_G+\beta-H_G\right).
 
 \subsection{Physics-Informed Dynamic Capping Head (PI-DCH)}
 \label{sec:pidch}
-PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$. In mission-critical environments such as smart grids, safety-critical traffic routing, and industrial control systems, deploying predictive models mandates rigorous output-space guidance to preclude physically unfeasible trajectories. While hard projection operators (e.g., clipping) guarantee bounded outputs, they inevitably induce severe gradient vanishing (zero gradients outside the feasible region) during backpropagation, crippling the learning process.
+PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$. In mission-critical environments such as smart grids, safety-critical traffic routing, and industrial control systems, deploying predictive models mandates rigorous output-space guidance to preclude physically unfeasible trajectories. While hard projection operators (e.g., clipping) guarantee bounded outputs, they may create a mismatch between training and inference, and can severely weaken gradient signals when used naively, hampering the learning process.
 
 PI-DCH circumvents this by systematically steering latent predictions toward a dynamic feasible envelope $C_{dyn}$ via a differentiable barrier before applying the strict physical boundary. Specifically, a linear decoder first generates an unconstrained predictive tensor $\tilde{Y} = \operatorname{Linear}(H_F)$. Concurrently, a learned barrier gate $u=\sigma(g(H_F))$ modulates this prediction smoothly:
 \begin{equation}
