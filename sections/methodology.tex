@@ -129,15 +129,23 @@ In the spatial pathway, standard full-graph attention requires $\mathcal{O}(P \c
 
 \subsection{Optimization Objective}
 \label{sec:optimization}
-To bridge the gap between purely data-driven forecasting and physical feasibility, we minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mse} + \lambda_{\Omega}\mathcal{L}_{penalty}$. The penalty term $\mathcal{L}_{penalty}$ structurally regularizes the model to internalize the operational set $\Omega$ during backpropagation. Using the positive-part operator $[x]^+ \triangleq \max(0, x)$, the penalty is defined as:
+To bridge the gap between purely data-driven forecasting and physical feasibility, we minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mse} + \lambda_{\Omega}\mathcal{L}_{penalty}$. The penalty term $\mathcal{L}_{penalty}$ structurally regularizes the model to internalize the operational set $\Omega$ during backpropagation. It is composed of two physically meaningful constraints: a non-negativity penalty ($\mathcal{L}_{neg}$) and a dynamic capacity limit penalty ($\mathcal{L}_{cap}$):
 \begin{equation}
-\begin{split}
-\mathcal{L}_{penalty} = \frac{1}{NH} \sum_{n,t} \Big( &\underbrace{[-\hat{Y}_{n,t}]^+}_{\text{Non-negativity}} \\
-&+ \underbrace{[\hat{Y}_{n,t} - C_{dyn,n,t}]^+}_{\text{Capacity Limit}} \Big).
-\end{split}
-\label{eq:feasibility_penalty}
+\mathcal{L}_{penalty} = \mathcal{L}_{neg} + \mathcal{L}_{cap}.
+\label{eq:feasibility_penalty_total}
 \end{equation}
-This term ensures the model learns to respect physical boundaries natively, thereby reducing the reliance on reactive clipping at inference time. The overall training logic is summarized in Algorithm~\ref{alg:physt_net}.
+
+Using the positive-part operator $[x]^+ \triangleq \max(0, x)$, we formulate the non-negativity constraint to penalize predictions that fall below zero:
+\begin{equation}
+\mathcal{L}_{neg} = \frac{1}{NH} \sum_{n,t} [-\hat{Y}_{n,t}]^+,
+\label{eq:feasibility_penalty_neg}
+\end{equation}
+and the capacity constraint to penalize predictions that exceed the dynamic operational envelope $C_{dyn}$:
+\begin{equation}
+\mathcal{L}_{cap} = \frac{1}{NH} \sum_{n,t} [\hat{Y}_{n,t} - C_{dyn,n,t}]^+.
+\label{eq:feasibility_penalty_cap}
+\end{equation}
+This decoupled formulation ensures the model learns to respect physical boundaries natively, thereby reducing the reliance on reactive clipping at inference time. The overall training logic is summarized in Algorithm~\ref{alg:physt_net}.
 
 \begin{algorithm}[H]
 \caption{PhyST-Net Forward Pass}
