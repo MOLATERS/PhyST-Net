@@ -27,7 +27,12 @@ The formulation assumes an operational forecasting setting. At time $t$, the mod
 The graph relation is also allowed to be partially observed. In some systems, $A$ is a physical adjacency matrix; in others, it is a distance kernel, a correlation prior, or an empty prior that is refined by adaptive learning. We therefore separate $A$ from $M_G$. The matrix $A$ specifies direct relation priors used by graph propagation, while $M_G$ collects auxiliary metadata such as node coordinates, node attributes, or environmental descriptors. This separation lets the same method support both fixed-topology and adaptive-topology forecasting.
 
 
-To simplify notation, let $\mathcal{X}_t \triangleq (\mathbf{X}_{t-T+1:t}, \mathbf{E}^{h}_{t-T+1:t}, \mathbf{E}^{f}_{t+1:t+H}, A, M_G)$ denote the set of input drivers available at time $t$. The forecasting model is a parameterized function $f_{\theta}$:
+To simplify notation, we encapsulate the set of input drivers available at time $t$ into a single tuple $\mathcal{X}_t$:
+\begin{equation}
+\mathcal{X}_t \triangleq \big(\mathbf{X}_{t-T+1:t}, \mathbf{E}^{h}_{t-T+1:t}, \mathbf{E}^{f}_{t+1:t+H}, A, M_G\big).
+\label{eq:input_tuple}
+\end{equation}
+The forecasting model is defined as a parameterized function $f_{\theta}$:
 \begin{equation}
 \hat{\mathbf{Y}}_{t+1:t+H} = f_{\theta}(\mathcal{X}_t),
 \label{eq:forecast_function}
