@@ -29,16 +29,23 @@ The graph relation is also allowed to be partially observed. In some systems, $A
 
 The forecasting model is a parameterized function $f_{\theta}$:
 \begin{equation}
-\hat{\mathbf{Y}}_{t+1:t+H}
-= f_{\theta}\left(\mathbf{X}_{t-T+1:t},\mathbf{E}^{h}_{t-T+1:t},\mathbf{E}^{f}_{t+1:t+H},A,M_G\right),
+\begin{split}
+\hat{\mathbf{Y}}_{t+1:t+H} = f_{\theta}\big(
+&\mathbf{X}_{t-T+1:t}, \mathbf{E}^{h}_{t-T+1:t}, \\
+&\mathbf{E}^{f}_{t+1:t+H}, A, M_G \big),
+\end{split}
 \label{eq:forecast_function}
 \end{equation}
 where $M_G$ denotes graph metadata such as coordinates, node attributes, physical distances, or topology priors. The model should satisfy three requirements. First, it should extract temporal representations from non-stationary node histories. Second, it should propagate information across graph nodes without assuming that all spatial dependencies share one mechanism. Third, it should use future ExG only through variables available at inference time.
 
 When domain constraints are available, the model can be decomposed into an unconstrained spatio-temporal backbone $\mathcal{H}_{\theta}$ and a constraint operator $\mathcal{C}_{\Omega}$:
 \begin{equation}
-\hat{\mathbf{Y}}_{t+1:t+H}
-= \mathcal{C}_{\Omega}\left(\mathcal{H}_{\theta}\left(\mathbf{X}_{t-T+1:t},\mathbf{E}^{h}_{t-T+1:t},\mathbf{E}^{f}_{t+1:t+H},A,M_G\right)\right),
+\begin{split}
+\hat{\mathbf{Y}}_{t+1:t+H} = \mathcal{C}_{\Omega}\Big(
+\mathcal{H}_{\theta}\big(
+&\mathbf{X}_{t-T+1:t}, \mathbf{E}^{h}_{t-T+1:t}, \\
+&\mathbf{E}^{f}_{t+1:t+H}, A, M_G\big) \Big),
+\end{split}
 \label{eq:constrained_forecast}
 \end{equation}
 where $\Omega$ denotes domain knowledge. In spatio-temporal node prediction, $\Omega$ includes non-negativity, capacity limits, and regime feasibility. In other domains, $\Omega$ may encode speed limits, conservation constraints, bounded sensor ranges, or operational safety limits.
@@ -47,8 +54,9 @@ where $\Omega$ denotes domain knowledge. In spatio-temporal node prediction, $\O
 Given a training set $\mathcal{D}$, the supervised objective is
 \begin{equation}
 \begin{split}
-\min_{\theta}\; \frac{1}{|\mathcal{D}|}\sum_{(\mathbf{X}, \dots, \mathbf{Y})\in\mathcal{D}}
-\Big[ \ell\big(\hat{\mathbf{Y}},\mathbf{Y}\big) + \lambda_{\Omega}\mathcal{R}_{\Omega}(\hat{\mathbf{Y}},\mathbf{Y}) \Big],
+\min_{\theta}\; \frac{1}{|\mathcal{D}|} \sum_{(\mathbf{X}, \dots, \mathbf{Y})\in\mathcal{D}} \Big[ 
+&\ell\big(\hat{\mathbf{Y}},\mathbf{Y}\big) \\
+&+ \lambda_{\Omega}\mathcal{R}_{\Omega}\big(\hat{\mathbf{Y}},\mathbf{Y}\big) \Big],
 \end{split}
 \label{eq:optimization_objective}
 \end{equation}
