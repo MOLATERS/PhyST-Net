@@ -58,7 +58,7 @@ where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$
 
 \subsection{Temporal Representation Learning}
 \label{sec:temporal_encoder}
-Inspired by the TimeXer architecture \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., shared external regimes or system-wide traffic trends) across all local patches. 
+Adopting the global token philosophy \cite{wang2024timexer} to facilitate efficient long-range context fusion, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., shared external regimes or system-wide traffic trends) across all local patches. 
 
 We denote the temporal encoding backbone as $\operatorname{STEnc}(\cdot)$. In PhyST-Net, STEnc is implemented as a standard Transformer encoder applied independently to the augmented node-wise token sequence $[z_{global} || Z]$; it is not a separately proposed novel module, but rather the essential temporal representation learner bridging AGSP and R-STMF:
 \begin{equation}
@@ -69,7 +69,7 @@ Crucially, rather than discarding the global token post-encoding, PhyST-Net stru
 
 \subsection{Relational Spatio-Temporal Manifold Fusion (R-STMF)}
 \label{sec:rstmf}
-R-STMF serves as the graph adapter. In physical systems, spatial dependence is multi-modal: nodes interact through shared environmental trends (macro) and localized proximities (micro). Inspired by the multi-branch scale-mixing philosophy of TimeMixer++ \cite{timemixerplus2025}, we explicitly decouple the node state into distinct branches rather than applying a homogenous graph operator. By utilizing the decoupled manifolds $R$ (the macro global token) and $U$ (the local patch tokens), R-STMF avoids conflating these multi-resolution mechanisms.
+R-STMF serves as the graph adapter. In physical systems, spatial dependence is multi-modal: nodes interact through shared environmental trends (macro) and localized proximities (micro). Building upon the multi-branch scale-mixing foundations of TimeMixer++ \cite{timemixerplus2025}, we explicitly decouple the node state into distinct branches rather than applying a homogenous graph operator. By utilizing the decoupled manifolds $R$ (the macro global token) and $U$ (the local patch tokens), R-STMF avoids conflating these multi-resolution mechanisms.
 
 For each branch $c\in\{U,R\}$, relational attention scores across nodes are computed independently:
 \begin{equation}
@@ -79,7 +79,7 @@ S_c=\frac{Q_c(K_c)^{\top}}{\sqrt{d_m}}+\mathcal{B}_0,
 where $\mathcal{B}_0$ is a graph prior bias. This asymmetric design is highly efficient: the macro-graph propagation relies exclusively on the single global token $R$, capturing system-wide correlations at a fraction of the computational cost, while the micro-graph propagation on $U$ maintains local temporal fidelity.
 
 \subsubsection{Relational Pruning and Masking}
-To enforce spatial locality and reduce noisy interactions, R-STMF employs a Top-$K$ pruning strategy. Drawing inspiration from the patch-specific graph filtration and dynamic routing mechanisms in TimeFilter \cite{timefilter2025}, we do not assume all nodes interact continuously. Instead, the attention matrix $A_c$ acts as a dynamic router, computed by masking out elements that are not among the $K_c$ largest scores:
+To enforce spatial locality and reduce noisy interactions, R-STMF employs a Top-$K$ pruning strategy. Drawing from the patch-specific graph filtration and dynamic routing mechanisms in TimeFilter \cite{timefilter2025}, we do not assume all nodes interact continuously. Instead, the attention matrix $A_c$ acts as a dynamic router, computed by masking out elements that are not among the $K_c$ largest scores:
 \begin{equation}
 \operatorname{Mask}(S, K)_{ij} = \begin{cases} S_{ij} & \text{if } S_{ij} \in \text{TopK}(S_i, K) \\ -\infty & \text{otherwise} \end{cases},
 \label{eq:rstmf_mask}

@@ -14,17 +14,6 @@ Spatio-temporal graph neural networks (STGNNs) build upon foundational graph con
 
 A critical limitation, however, is the widespread reliance on homogeneous propagation protocols across all latent states. In physical systems, spatial dependence is inherently multi-modal; nodes interact through localized proximities, shared environmental influences, and overarching exogenous drivers. A singular adjacency matrix, even if learned dynamically, conflates these distinct mechanisms. R-STMF resolves this by decomposing temporal representations into high-frequency local variations and low-frequency macro-trends, applying targeted, sparse relational propagation to each manifold prior to fusion.
 
-% \begin{figure}[!t]
-% \centering
-% % \begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth]
-% %     % Data Flow Comparison Placeholder
-% %     \draw[dashed, fill=gray!5] (0,0) rectangle (8.5, 2.5);
-% %     \node[align=center] at (4.25, 1.25) {\textbf{Visual Placeholder: Data-Flow Interface Comparison}\\(a) Traditional Methods: Concatenate History + Future ExG into backbone.\\(b) PhyST-Net: Decoupled paths (History $\rightarrow$ Temporal, Future ExG $\rightarrow$ K-AMC).};
-% % \end{tikzpicture}
-% \caption{Comparison of Exogenous Variable Fusion Interfaces. (a) Standard forecasting models frequently concatenate historical data and future drivers early in the network, increasing the risk of temporal leakage and confounding latent representation learning. (b) PhyST-Net explicitly decouples these data flows, reserving future drivers exclusively for horizon-level conditioning via the K-AMC module.}
-% \label{fig:interface_comparison}
-% \end{figure}
-
 \subsection{Exogenous-Variable-Aware Forecasting}
 \label{sec:related_exg}
 Real-world forecasting is intrinsically dependent on exogenous (ExG) variables. In vertical domains, such as intelligent traffic routing---where models like ConFormer \cite{conformer2025} leverage external factors like accidents and regulations---and resource-constrained operational forecasting, ExG features are critical for predictive resilience. 
@@ -38,12 +27,6 @@ While these mechanisms significantly improve accuracy under ideal conditions, th
 Interpretability is paramount in operational forecasting, as dispatchers require insight into the primary drivers shaping a prediction. While attention weights and post-hoc attribution methods offer diagnostic utility, they often fail to reflect the model's actual computational pathways. Kolmogorov-Arnold Networks (KAN) \cite{liu2024kan} represent a paradigm shift from traditional perceptrons by modeling transformations via learnable, univariate spline-based edge functions \cite{yamak2025review, han2024kan4tsf, vaca2024kan, xu2024kolmogorov}.
 
 By structuring a conditioning network as an additive sum of feature-wise edge functions, the influence of individual input variables can be analytically inspected through learned basis coefficients and derivatives. PhyST-Net capitalizes on this property within the K-AMC module: future ExG features are mapped to scale and shift parameters via spline functions. While not establishing strict causal identifiability, this architectural alignment provides a transparent, inspectable explanation mechanism far superior to generic dense concatenation.
-
-\subsection{Scalable Spatio-Temporal Forecasting}
-\label{sec:related_scalability}
-Computational scalability is a persistent bottleneck in graph forecasting. Dense spatio-temporal attention scales quadratically with both look-back length and graph cardinality. Conventional mitigation strategies---such as temporal downsampling, rigid patching, and aggressive graph truncation---improve efficiency but risk discarding critical physical dynamics.
-
-PhyST-Net approaches scalability dualistically. First, AGSP compresses the raw temporal dimension into a highly dense sequence of continuous tokens, preserving soft event boundaries while drastically lowering attention overhead. Second, R-STMF employs a sparse Top-$K$ graph propagation scheme, ensuring that node interaction costs scale relative to a parameterized neighborhood size rather than the complete graph matrix. The theoretical complexity analysis detailed in Section~\ref{sec:complexity_analysis} connects these design choices directly to practical deployment constraints.
 
 \subsection{Physics-Informed and Constraint-Aware Forecasting}
 \label{sec:related_constraints}
