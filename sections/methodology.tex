@@ -58,7 +58,9 @@ where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$
 
 \subsection{Temporal Representation Learning}
 \label{sec:temporal_encoder}
-Inspired by the TimeXer architecture \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., shared external regimes or system-wide traffic trends) across all local patches. The augmented tensor $[z_{global} || Z]$ is then processed by a Transformer encoder to learn temporal dependencies:
+Inspired by the TimeXer architecture \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., shared external regimes or system-wide traffic trends) across all local patches. 
+
+We denote the temporal encoding backbone as $\operatorname{STEnc}(\cdot)$. In PhyST-Net, STEnc is implemented as a standard Transformer encoder applied independently to the augmented node-wise token sequence $[z_{global} || Z]$; it is not a separately proposed novel module, but rather the essential temporal representation learner bridging AGSP and R-STMF:
 \begin{equation}
 H_T=\operatorname{STEnc}([z_{global} || Z]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
 \label{eq:temporal_encoder}
