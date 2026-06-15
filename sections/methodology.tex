@@ -124,11 +124,11 @@ PI-DCH circumvents this by systematically steering latent predictions toward a d
 \hat{Y}_{soft}=\tilde{Y}+u\odot(C_{dyn}-\tilde{Y}).
 \label{eq:pidch_gate}
 \end{equation}
-Crucially, during the training phase, this differentiable soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss ($\mathcal{L}_{mse}$) and the penalty ($\mathcal{L}_{penalty}$). This guarantees that gradients backpropagate natively through the constraint-shaping logic, mitigating the train-inference mismatch of naive clipping. 
+Crucially, during the training phase, this differentiable soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss ($\mathcal{L}_{mae}$) and the penalty ($\mathcal{L}_{penalty}$). This guarantees that gradients backpropagate natively through the constraint-shaping logic, mitigating the train-inference mismatch of naive clipping. 
 
-The definitive feasible forecast $\hat{Y}$ is subsequently derived via a non-linear hard projection:
+The definitive feasible forecast $\hat{\mathbf{Y}}$ is subsequently derived via a non-linear hard projection:
 \begin{equation}
-\hat{Y}=\operatorname{clip}(\hat{Y}_{soft},0,C_{dyn}).
+\hat{\mathbf{Y}}=\operatorname{clip}(\hat{Y}_{soft},0,C_{dyn}).
 \label{eq:pidch_clip}
 \end{equation}
 This physics-informed projection is stringently enforced during inference, enforcing bounded feasibility with respect to the specified envelope.
@@ -143,11 +143,11 @@ In the spatial pathway, standard full-graph attention requires $\mathcal{O}(P \c
 
 \subsection{Optimization Objective}
 \label{sec:optimization}
-To bridge the gap between purely data-driven forecasting and physical feasibility, we minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mse} + \lambda_{\Omega}\mathcal{L}_{penalty}$. The penalty term $\mathcal{L}_{penalty}$ structurally regularizes the model to internalize the operational set $\Omega$ during backpropagation. Utilizing the positive-part operator $[x]^+ \triangleq \max(0, x)$, we decouple the penalty into two physically meaningful components: a non-negativity constraint and a dynamic capacity limit constraint:
+To bridge the gap between purely data-driven forecasting and physical feasibility, we minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mae} + \lambda_{\Omega}\mathcal{L}_{penalty}$. The penalty term $\mathcal{L}_{penalty}$ structurally regularizes the model to internalize the operational set $\Omega$ during backpropagation. Utilizing the positive-part operator $[x]^+ \triangleq \max(0, x)$, we decouple the penalty into two physically meaningful components: a non-negativity constraint and a dynamic capacity limit constraint:
 \begin{align}
 \mathcal{L}_{penalty} &= \mathcal{L}_{neg} + \mathcal{L}_{cap}, \label{eq:feasibility_penalty_total} \\
-\mathcal{L}_{neg} &= \frac{1}{NH} \sum_{n,t} [-\hat{Y}_{n,t}]^+, \label{eq:feasibility_penalty_neg} \\
-\mathcal{L}_{cap} &= \frac{1}{NH} \sum_{n,t} [\hat{Y}_{n,t} - C_{dyn,n,t}]^+. \label{eq:feasibility_penalty_cap}
+\mathcal{L}_{neg} &= \frac{1}{|\mathcal{D}|HN} \sum_{\mathcal{D}} \sum_{n,h} [-\hat{Y}_{soft,n,h}]^+, \label{eq:feasibility_penalty_neg} \\
+\mathcal{L}_{cap} &= \frac{1}{|\mathcal{D}|HN} \sum_{\mathcal{D}} \sum_{n,h} [\hat{Y}_{soft,n,h} - C_{dyn,n,h}]^+. \label{eq:feasibility_penalty_cap}
 \end{align}
 This decoupled formulation ensures the model learns to respect physical boundaries natively, thereby reducing the reliance on reactive clipping at inference time. The overall training logic is summarized in Algorithm~\ref{alg:physt_net}.
 
@@ -155,32 +155,32 @@ This decoupled formulation ensures the model learns to respect physical boundari
 \caption{PhyST-Net Forward Pass}
 \label{alg:physt_net}
 \begin{algorithmic}[1]
-\REQUIRE Historical states $\mathbf{X}$, Historical ExG $\mathbf{E}^h$, Future ExG $\mathbf{E}^f$, Graph $A$, Metadata $M_G$.
+\REQUIRE Input tuple $\mathcal{X}_t = (\mathbf{X}, \mathbf{E}^h, \mathbf{E}^f, A, M_G)$, Domain knowledge $\Omega$.
 \ENSURE Feasible network forecast $\hat{\mathbf{Y}}$.
 
 \STATE \COMMENT{\textit{Phase I: AGSP Continuous Tokenization}}
-\STATE Initialize learnable Gaussian parameters $\mu_i, \sigma_i$ for $P$ tokens.
+\STATE Initialize learnable Gaussian parameters $\mu_i, \sigma_i$ for $P$ tokens using metadata $M_G$.
 \FOR{each token $i \in \{1,\ldots,P\}$}
     \STATE Compute soft-window weights $W_i(\tau) = \exp\left(-\frac{(\tau-\mu_i)^2}{2\sigma_i^2+\epsilon}\right)$.
     \STATE Aggregate $\mathbf{X}$ and $\mathbf{E}^h$ via $W_i(\tau)$ to form continuous token $Z_{:,i,:}$.
 \ENDFOR
 
-\STATE \COMMENT{\textit{Phase II: Temporal Encoding}}
+\STATE \COMMENT{\textit{Phase II: Temporal Encoding ($\mathcal{H}_\theta$ part 1)}}
 \STATE Process $Z$ via Multi-Head Self-Attention to capture temporal dependencies $\to H_T$.
 
-\STATE \COMMENT{\textit{Phase III: R-STMF Graph Adaptation}}
+\STATE \COMMENT{\textit{Phase III: R-STMF Graph Adaptation ($\mathcal{H}_\theta$ part 2)}}
 \STATE Decompose $H_T$ into macro-trend $R$ and local-variation $U$ manifolds.
 \STATE Apply Top-$K$ sparse masking to $A$ based on spatial similarities.
 \STATE Propagate $R$ and $U$ over the masked graph and fuse $\to H_G$.
 
-\STATE \COMMENT{\textit{Phase IV: K-AMC Exogenous Modulation}}
+\STATE \COMMENT{\textit{Phase IV: K-AMC Exogenous Modulation ($\mathcal{H}_\theta$ part 3)}}
 \STATE Align horizon-wise $\mathbf{E}^f$ to patch-wise representation $\bar{\mathbf{E}}^f$.
 \STATE Compute B-spline edge functions via KAN block to generate $[\gamma, \beta]$.
 \STATE Modulate latent states: $H_F \leftarrow H_G + \lambda(\gamma \odot H_G + \beta - H_G)$.
 
-\STATE \COMMENT{\textit{Phase V: PI-DCH Constraint Decoding}}
+\STATE \COMMENT{\textit{Phase V: PI-DCH Constraint Decoding ($\mathcal{C}_\Omega$)}}
 \STATE Decode unconstrained prediction $\tilde{Y} = \operatorname{Linear}(H_F)$.
-\STATE Compute barrier gate $u = \sigma(g(H_F))$ to steer toward dynamic envelope $C_{dyn}$.
+\STATE Compute barrier gate $u = \sigma(g(H_F))$ to steer toward dynamic envelope $C_{dyn} \in \Omega$.
 \STATE Shape prediction softly: $\hat{Y}_{soft} \leftarrow \tilde{Y} + u \odot (C_{dyn} - \tilde{Y})$.
 \STATE Project to feasible set: $\hat{\mathbf{Y}} \leftarrow \operatorname{clip}(\hat{Y}_{soft}, 0, C_{dyn})$.
 

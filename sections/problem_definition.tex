@@ -1,56 +1,39 @@
 \section{Problem Definition}
 \label{sec:problem_definition}
-We formulate the task as ExG-aware spatio-temporal graph forecasting. Let $G=(V,E,A)$ denote a graph, where $V=\{v_1,\ldots,v_N\}$ is the node set, $E$ is the edge set, and $A\in\mathbb{R}^{N\times N}$ is an adjacency or relation matrix. A node can represent a network element, road sensor, grid bus, monitoring station, or industrial device depending on the application. The graph relation $A$ may be physical, geographic, statistical, learned, or a combination of these sources.
 
-At forecasting origin $t$, the historical target tensor is
-\begin{equation}
-\mathbf{X}_{t-T+1:t}\in\mathbb{R}^{T\times N\times D_x},
-\end{equation}
-where $T$ is the look-back length, $N$ is the number of nodes, and $D_x$ is the target-state dimension. The future prediction target is
-\begin{equation}
-\mathbf{Y}_{t+1:t+H}\in\mathbb{R}^{H\times N\times D_y},
-\end{equation}
-where $H$ is the forecast horizon and $D_y$ is the output dimension.
+We formulate the task as exogenous-variable-aware (ExG-aware) spatio-temporal graph forecasting. This formulation aims to predict future states of a networked system by integrating historical observations, graph-structured dependencies, and external driving factors.
 
-We distinguish two types of exogenous variables. Historical ExG is available over the look-back window:
-\begin{equation}
-\mathbf{E}^{h}_{t-T+1:t}\in\mathbb{R}^{T\times D_h},
-\end{equation}
-and describes external or contextual conditions observed together with the target history. Future ExG is available over the forecast horizon:
-\begin{equation}
-\mathbf{E}^{f}_{t+1:t+H}\in\mathbb{R}^{H\times D_f},
-\end{equation}
-and represents known or forecastable future drivers. This separation is important because historical ExG estimates the current latent state, whereas future ExG conditions the unknown horizon. In spatio-temporal node prediction, historical ExG may include external variables and time features, while future ExG may include exogenous forecasts.
+\subsection{Graph Representation and Spatial Dependencies}
+Let $G=(V, E, A)$ denote a spatio-temporal graph, where $V=\{v_1, \ldots, v_N\}$ is the set of $N$ nodes representing physical or logical entities (e.g., wind turbines in a farm or sensors in a city). $E$ is the set of edges representing connections, and $A \in \mathbb{R}^{N \times N}$ is the adjacency matrix encoding spatial relations. In practice, $A$ can be a physical adjacency matrix, a distance-based kernel, or a learned correlation matrix. To maintain flexibility across different domains, we further define $M_G$ as a set of graph metadata, containing auxiliary information such as node coordinates, static attributes, or environmental descriptors that are not captured by the topology $A$ alone.
 
-The formulation assumes an operational forecasting setting. At time $t$, the model has access to historical target states and historical ExG up to $t$, and it has access to future ExG for $t+1$ to $t+H$ only if those variables are known, scheduled, or forecast by an external source. The future target values are never used as inputs. This assumption is important for preventing leakage: variables that are measured only after the target horizon should not be included in $\mathbf{E}^{f}_{t+1:t+H}$. If an application lacks reliable future ExG, the same formulation can be used by setting $\mathbf{E}^{f}$ to calendar features, scenario forecasts, or a learned uncertainty representation, but the resulting claim should be stated as a different forecasting setting.
+\subsection{Temporal Tensors and Exogenous Variables}
+At a given forecasting origin $t$, we define the historical target tensor $\mathbf{X}_{t-T+1:t} \in \mathbb{R}^{T \times N \times D_x}$, where $T$ is the look-back window and $D_x$ is the dimension of the target state at each node. Our goal is to predict the future target tensor $\mathbf{Y}_{t+1:t+H} \in \mathbb{R}^{H \times N \times D_y}$ over a forecast horizon $H$.
 
-The graph relation is also allowed to be partially observed. In some systems, $A$ is a physical adjacency matrix; in others, it is a distance kernel, a correlation prior, or an empty prior that is refined by adaptive learning. We therefore separate $A$ from $M_G$. The matrix $A$ specifies direct relation priors used by graph propagation, while $M_G$ collects auxiliary metadata such as node coordinates, node attributes, or environmental descriptors. This separation lets the same method support both fixed-topology and adaptive-topology forecasting.
+A critical challenge in modern forecasting is the integration of exogenous variables (ExG), which we categorize into two distinct types based on their temporal availability:
+\begin{itemize}
+    \item \textbf{Historical ExG} ($\mathbf{E}^{h}_{t-T+1:t} \in \mathbb{R}^{T \times D_h}$): These variables represent external conditions (e.g., historical ambient temperature or humidity) that were observed alongside the target state history. They provide contextual information to help the model identify the latent state of the system during the look-back period.
+    \item \textbf{Future ExG} ($\mathbf{E}^{f}_{t+1:t+H} \in \mathbb{R}^{H \times D_f}$): These represent known or forecastable future drivers (e.g., weather forecasts or scheduled operational constraints) that are available for the duration of the forecast horizon. Unlike historical variables, future ExG serves as a conditional driver for the unknown future trajectory.
+\end{itemize}
 
+\subsection{Operational Forecasting Assumptions}
+To ensure the model is applicable to real-world operational settings, we enforce a strict non-leakage constraint. At inference time $t$, the model $f_{\theta}$ is only permitted to access information available up to $t$ for target states and historical ExG, and only those future ExG variables that are genuinely known or forecast by external sources (e.g., Numerical Weather Prediction models). This ensures that $\mathbf{E}^{f}$ does not contain any "future-peeking" information that would be unavailable in a deployed environment.
 
-To simplify notation, we encapsulate the set of input drivers available at time $t$ into a single tuple $\mathcal{X}_t$:
+\subsection{General Optimization Objective}
+To simplify the notation, we encapsulate all input drivers available at time $t$ into a single input tuple $\mathcal{X}_t$:
 \begin{equation}
 \mathcal{X}_t \triangleq \big(\mathbf{X}_{t-T+1:t}, \mathbf{E}^{h}_{t-T+1:t}, \mathbf{E}^{f}_{t+1:t+H}, A, M_G\big).
 \label{eq:input_tuple}
 \end{equation}
-The forecasting model is defined as a parameterized function $f_{\theta}$:
+The forecasting task is defined by a parameterized model $f_{\theta}$ which maps $\mathcal{X}_t$ to the predicted horizon $\hat{\mathbf{Y}}_{t+1:t+H}$. For domains where physical laws or operational limits must be satisfied, the model can be decomposed into an unconstrained spatio-temporal backbone $\mathcal{H}_{\theta}$ and a constraint operator $\mathcal{C}_{\Omega}$ parameterized by domain knowledge $\Omega$:
 \begin{equation}
-\hat{\mathbf{Y}}_{t+1:t+H} = f_{\theta}(\mathcal{X}_t),
-\label{eq:forecast_function}
-\end{equation}
-where $M_G$ denotes graph metadata such as coordinates, node attributes, or physical distances. The model should satisfy three requirements. First, it should extract temporal representations from non-stationary node histories. Second, it should propagate information across graph nodes without assuming that all spatial dependencies share one mechanism. Third, it should use future ExG only through variables available at inference time.
-
-When domain constraints are available, the model can be decomposed into an unconstrained spatio-temporal backbone $\mathcal{H}_{\theta}$ and a constraint operator $\mathcal{C}_{\Omega}$:
-\begin{equation}
-\hat{\mathbf{Y}}_{t+1:t+H} = \mathcal{C}_{\Omega}\big(\mathcal{H}_{\theta}(\mathcal{X}_t)\big),
+\hat{\mathbf{Y}}_{t+1:t+H} = \mathcal{C}_{\Omega}\big(\mathcal{H}_{\theta}(\mathcal{X}_t)\big).
 \label{eq:constrained_forecast}
 \end{equation}
-where $\Omega$ denotes domain knowledge. In spatio-temporal node prediction, $\Omega$ includes non-negativity, capacity limits, and regime feasibility. In other domains, $\Omega$ may encode speed limits, conservation constraints, bounded sensor ranges, or operational safety limits.
+The operator $\mathcal{C}_{\Omega}$ ensures that the final output adheres to feasibility requirements such as non-negativity or capacity limits.
 
-
-Given a training set $\mathcal{D}$, the supervised objective is
+Given a training dataset $\mathcal{D}$, the model parameters $\theta$ are optimized by minimizing the Mean Absolute Error (MAE) between the predictions and the ground truth:
 \begin{equation}
-\min_{\theta}\; \frac{1}{|\mathcal{D}|}\sum_{(\mathcal{X}, \mathbf{Y})\in\mathcal{D}}
-\ell\big(f_{\theta}(\mathcal{X}),\mathbf{Y}\big) + \lambda_{\Omega}\mathcal{R}_{\Omega}\big(f_{\theta}(\mathcal{X}),\mathbf{Y}\big),
+\mathcal{L}(\theta) = \frac{1}{|\mathcal{D}| \cdot H \cdot N} \sum_{(\mathcal{X}, \mathbf{Y}) \in \mathcal{D}} \sum_{h=1}^{H} \sum_{n=1}^{N} | f_{\theta}(\mathcal{X})_{h,n} - \mathbf{Y}_{h,n} |,
 \label{eq:optimization_objective}
 \end{equation}
-where $\ell(\cdot)$ is a forecasting loss, $\mathcal{R}_{\Omega}$ is an optional constraint-aware regularizer, and $\lambda_{\Omega}$ controls its strength. The formulation does not require a specific graph operator; any module that maps temporal node states to graph-enhanced node states can be used as the graph adapter.
+where the $L_1$ loss provides robustness against outliers in the spatio-temporal data. This objective provides a general training framework that can be easily extended with additional task-specific regularizers in later stages of the methodology.
