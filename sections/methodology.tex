@@ -60,12 +60,17 @@ where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$
 \label{sec:temporal_encoder}
 Adopting the global token philosophy \cite{wang2024timexer} to facilitate efficient long-range context fusion, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation (e.g., shared external regimes or system-wide traffic trends) across all local patches. 
 
-We denote the temporal encoding backbone as $\operatorname{STEnc}(\cdot)$. In PhyST-Net, STEnc is implemented as a standard Transformer encoder applied independently to the augmented node-wise token sequence $[z_{global} || Z]$; it is not a separately proposed novel module, but rather the essential temporal representation learner bridging AGSP and R-STMF:
+We denote the temporal encoding backbone as $\operatorname{STEnc}(\cdot)$. In PhyST-Net, rather than a naive standard Transformer, STEnc incorporates a targeted cross-attention mechanism. Specifically, within each encoder layer, the augmented node-wise token sequence $[Z \parallel z_{global}]$ first undergoes standard multi-head self-attention. Subsequently, to enrich the macro-trend representation with system-wide context, the global token uniquely cross-attends to the embedded historical exogenous features (e.g., SCADA and time-mark metadata), acting as an information sink:
 \begin{equation}
-H_T=\operatorname{STEnc}([z_{global} || Z]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
+z_{global}' = z_{global} + \operatorname{CrossAttention}(z_{global}, \mathbf{E}^h, \mathbf{E}^h).
+\label{eq:cross_attention}
+\end{equation}
+This contextually enriched sequence is then processed through the feed-forward networks, yielding the final temporal representation:
+\begin{equation}
+H_T=\operatorname{STEnc}([Z \parallel z_{global}]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
 \label{eq:temporal_encoder}
 \end{equation}
-Crucially, rather than discarding the global token post-encoding, PhyST-Net structurally leverages it to separate the node's state into two distinct manifolds: a macro-trend global state $R \triangleq H_{T,0}$ and a local-variation patch state $U \triangleq H_{T,1:P}$.
+Crucially, rather than discarding the global token post-encoding, PhyST-Net structurally leverages it to separate the node's state into two distinct manifolds: a local-variation patch state $U \triangleq H_{T,1:P}$ and a macro-trend global state $R \triangleq H_{T,P+1}$.
 
 \subsection{Relational Spatio-Temporal Manifold Fusion (R-STMF)}
 \label{sec:rstmf}

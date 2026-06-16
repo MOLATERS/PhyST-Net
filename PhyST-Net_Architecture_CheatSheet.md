@@ -25,9 +25,9 @@ graph TD
 
     %% Phase II
     subgraph Phase2 ["Phase II: Temporal Encoding"]
-        STEnc["STEnc (Multi-Head Self-Attention)<br/>+ Global Token (z_global)"]
+        STEnc["STEnc (Multi-Head Self-Attention)<br/>+ Global Token Cross-Attention (with E^h)"]
     end
-    STEnc -- "H_T = [R || U]<br/>[B, N, P+1, d]" --> RSTMF
+    STEnc -- "H_T = [Z || z_global]<br/>[B, N, P+1, d]" --> RSTMF
 
     %% Phase III
     A -.-> RSTMF

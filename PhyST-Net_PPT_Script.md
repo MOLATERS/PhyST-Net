@@ -47,19 +47,23 @@
         *   学习参数：中心点 `mu` 和 带宽 `log_sigma`。
         *   数值稳定性处理：`W = torch.exp(-dist_sq / (2 * (sigma**2) + 1e-4))`，并利用 `W / (W.sum + 1e-8)` 实现“单位分解 (Partition of Unity)”。
         *   软切片实现：将加权后的时间序列直接进行线性映射 `self.value_projection(x_weighted)`。
-*   **Slide 9: 创新二：R-STMF (关系型时空流形融合)**
+*   **Slide 9: 时间表示学习与 Global Token (含 Cross-Attention)**
+    *   引入 $z_{global}$：作为序列级的记忆瓶颈（Memory Bottleneck）。
+    *   **代码干货**：在时空编码阶段，$z_{global}$ 不仅参与 Self-Attention，还会专门对历史外生变量 (如 SCADA 状态) 执行 **Cross-Attention**，充当宏观环境的信息汇聚点 (Information Sink)。
+    *   将节点状态拆分为：宏观趋势 (Macro-trend $R$) 和 局部波动 (Local-variation $U$)。
+*   **Slide 10: 创新二：R-STMF (关系型时空流形融合)**
     *   **理论**：解耦系统性宏观影响与局部邻居影响。
     *   **代码干货 (`PSTG_TimeMixerFusion`)**：
         *   利用 1D Conv 将时序分解为 `seasonal` (宏观周期) 和 `trend` (局部趋势) 两大流形。
         *   **安全距离掩码与剪枝**：先施加物理距离掩码 `dist_mask` 将非邻居置为 `-1e9`，再执行 `torch.topk(attn, k_val, dim=-1)`，确保图路由的物理合理性和稀疏性。
         *   门控融合：使用可学习的 Sigmoid `fusion_gate` 将双分支重组。
-*   **Slide 10: 创新三：K-AMC (基于 KAN 的外生变量调制)**
+*   **Slide 11: 创新三：K-AMC (基于 KAN 的外生变量调制)**
     *   **理论**：以高表达能力引入未来外生变量。
     *   **代码干货 (`KFiLM` 模块)**：
         *   将 NWP 变量通过 `AdaptiveAvgPool1d` 降采样对齐到 Patch 维度。
         *   引入 `KAN` (Kolmogorov-Arnold Network)，设置 `grid_size=5, spline_order=3`，预测生成 $\gamma$ 和 $\beta$ 参数。
         *   **稳定调制策略**：采用残差放缩 `A + 0.1 * (gamma * A + beta - A)` 进行 FiLM 调制，极大稳定了训练初期的梯度。
-*   **Slide 11: 创新四：PI-DCH (物理信息动态封顶头)**
+*   **Slide 12: 创新四：PI-DCH (物理信息动态封顶头)**
     *   **理论**：可微物理约束 $\mathcal{C}_\Omega$，避免 Hard Clip 导致的 Train-Inference Mismatch。
     *   **代码干货 (`_apply_dynamic_capping`)**：
         *   通过 `GateHead` 预测屏障门极性 `u = sigmoid(linear(H_F))`。
@@ -68,15 +72,15 @@
 
 ### 第四部分：优化与总结 (Optimization & Summary)
 
-*   **Slide 12: 计算复杂度优势**
+*   **Slide 13: 计算复杂度优势**
     *   利用 AGSP 的 Token 压缩和 R-STMF 的 Top-K 掩码，将自注意力复杂度从 $O(N \cdot T^2 + T \cdot N^2)$ 成功解耦并降阶至 $O(N \cdot P^2 + P \cdot K \cdot N)$。
-*   **Slide 13: 多目标物理罚项损失**
+*   **Slide 14: 多目标物理罚项损失**
     *   展示优化公式：$\mathcal{L}_{mae} + \lambda(\mathcal{L}_{neg} + \mathcal{L}_{cap})$。
     *   说明代码中如何利用 ReLU (`[x]+`) 对软逼近预测值 $\hat{Y}_{soft}$ 进行原生的越界惩罚。
-*   **Slide 14: 当前进度 (Progress)**
+*   **Slide 15: 当前进度 (Progress)**
     *   理论闭环：`Problem Definition` 与 `Methodology` 写作与数学推导完毕。
     *   代码工程：`TimeXerWind` 工程下的 `develop` 分支已完全对齐上述四大核心模块。
-*   **Slide 15: 下一步计划与 Q&A (Next Steps)**
+*   **Slide 16: 下一步计划与 Q&A (Next Steps)**
     *   绘制高质量论文配图（主架构、微观模块图）。
     *   在真实风电场/交通数据集上运行完整的 Benchmark 和消融实验。
     *   Q&A 环节。
