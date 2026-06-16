@@ -23,13 +23,77 @@ where $\Phi_{patch}$ is AGSP, $\Phi_{temp}$ is the temporal Transformer encoder,
 
 \begin{figure}[!t]
 \centering
-\begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth]
-    % Micro Modules Placeholder
-    \draw[dashed, fill=orange!5] (0,0) rectangle (4.1, 2.5);
-    \node[align=center, text width=3.8cm] at (2.05, 1.25) {\textbf{(a) AGSP Detail}\\Soft overlapping Gaussians vs. Rigid Hard Patches.};
-    
-    \draw[dashed, fill=blue!5] (4.4,0) rectangle (8.5, 2.5);
-    \node[align=center, text width=3.8cm] at (6.45, 1.25) {\textbf{(b) K-AMC Detail}\\B-Spline parameterization mapping Future ExG to $\gamma, \beta$.};
+\begin{tikzpicture}[font=\sffamily\scriptsize, >=Stealth, scale=0.88, every node/.style={transform shape}]
+
+    % --- (a) AGSP Detail ---
+    \node[anchor=north west, font=\bfseries] at (-0.5, 3.5) {(a) AGSP Detail};
+
+    % Left side: Rigid Patches
+    \node[anchor=north, align=center] at (1.5, 3.0) {Rigid Hard Patches};
+    \draw[->] (0, 1.2) -- (3.2, 1.2) node[right] {$t$};
+    % Noisy signal
+    \draw[thick, gray] plot[domain=0.2:3.0, samples=50] (\x, {1.7 + 0.3*sin(deg(\x*4)) + 0.1*sin(deg(\x*15))});
+    % Hard patch boundaries
+    \draw[blue, thick] (0.5, 1.2) rectangle (1.2, 2.5);
+    \draw[orange, thick] (1.2, 1.2) rectangle (1.9, 2.5);
+    \draw[green!60!black, thick] (1.9, 1.2) rectangle (2.6, 2.5);
+    % Artifacts warning
+    \draw[<-, red, thick] (1.2, 2.6) -- (1.0, 2.9) node[above, text=red, align=center] {Boundary\\Artifacts};
+    \draw[<-, red, thick] (1.9, 2.6) -- (2.1, 2.9);
+
+    % Right side: Soft Gaussians
+    \node[anchor=north, align=center] at (5.5, 3.0) {Soft Overlapping Gaussians};
+    \draw[->] (4.0, 1.2) -- (7.2, 1.2) node[right] {$t$};
+    % Noisy signal
+    \draw[thick, gray] plot[domain=4.2:7.0, samples=50] (\x, {1.7 + 0.3*sin(deg((\x-4)*4)) + 0.1*sin(deg((\x-4)*15))});
+    % Gaussian curves
+    \filldraw[fill=blue!20, draw=blue, thick, fill opacity=0.5] plot[domain=4.2:5.8, samples=50] (\x, {1.2 + 1.2*exp(-((\x-5.0)^2)/0.08)});
+    \filldraw[fill=orange!20, draw=orange, thick, fill opacity=0.5] plot[domain=4.8:6.4, samples=50] (\x, {1.2 + 1.0*exp(-((\x-5.6)^2)/0.05)});
+    \filldraw[fill=green!20, draw=green!60!black, thick, fill opacity=0.5] plot[domain=5.4:7.0, samples=50] (\x, {1.2 + 1.3*exp(-((\x-6.2)^2)/0.09)});
+
+    % --- (b) K-AMC Detail ---
+    \node[anchor=north west, font=\bfseries] at (-0.5, 0.5) {(b) K-AMC Detail};
+
+    % Input E^f
+    \draw[fill=blue!8, draw=blue!60!black, rounded corners, thick] (0.2, -0.5) rectangle (1.8, -1.0) node[pos=0.5] {Future ExG $\mathbf{E}^f$};
+    \draw[->, thick] (1.0, -1.0) -- (1.0, -1.3) node[right, pos=0.5] {AvgPool1d};
+
+    % KAN Block
+    \draw[fill=teal!8, draw=teal!60!black, rounded corners, thick] (0.0, -1.3) rectangle (2.0, -2.8);
+    \node[anchor=north] at (1.0, -1.3) {\textbf{KAN Block}};
+    % Nodes
+    \filldraw[black] (0.5, -1.8) circle (1.5pt);
+    \filldraw[black] (1.5, -1.8) circle (1.5pt);
+    \filldraw[black] (1.0, -2.6) circle (1.5pt);
+    % Spline Edges
+    \draw[->, thick, violet] (0.5, -1.8) .. controls (0.3, -2.2) and (0.7, -2.4) .. (1.0, -2.6) node[midway, left] {$\phi(x)$};
+    \draw[->, thick, violet] (1.5, -1.8) .. controls (1.7, -2.2) and (1.3, -2.4) .. (1.0, -2.6);
+
+    % Split into Gamma and Beta
+    \draw[->, thick] (1.0, -2.8) -- (1.0, -3.1);
+    \draw[-, thick] (0.5, -3.1) -- (1.5, -3.1);
+    \draw[->, thick] (0.5, -3.1) -- (0.5, -3.3);
+    \draw[->, thick] (1.5, -3.1) -- (1.5, -3.3);
+
+    \draw[fill=violet!8, draw=violet!60!black, thick] (0.2, -3.3) rectangle (0.8, -3.7) node[pos=0.5] {$\gamma$};
+    \draw[fill=violet!8, draw=violet!60!black, thick] (1.2, -3.3) rectangle (1.8, -3.7) node[pos=0.5] {$\beta$};
+
+    % FiLM Modulation
+    \draw[->, thick] (3.0, -3.5) -- (2.3, -3.5) node[above, pos=0.2] {$H_G$};
+    \draw[fill=white, thick] (2.0, -3.5) circle (0.2) node {$\otimes$};
+    \draw[->, thick] (0.8, -3.5) -- (1.8, -3.5); % gamma to tensor
+
+    \draw[->, thick] (2.0, -3.7) -- (2.0, -4.2);
+    \draw[fill=white, thick] (2.0, -4.4) circle (0.2) node {$\oplus$};
+    \draw[->, thick] (1.5, -3.7) |- (1.8, -4.4); % beta to tensor
+
+    \draw[->, thick] (3.0, -3.5) |- (2.3, -5.0); % Residual
+    \draw[fill=white, thick] (2.0, -5.0) circle (0.2) node {$\oplus$};
+    \draw[->, thick] (2.0, -4.6) -- (2.0, -4.8);
+
+    \draw[->, thick] (2.0, -5.2) -- (2.0, -5.7) node[below] {\textbf{Conditioned State} $H_F$};
+    \node[right] at (2.2, -4.7) {Res Scaling $\times 0.1$};
+
 \end{tikzpicture}
 \caption{Internal mechanics of highly coupled modules. (a) AGSP replaces discrete sequence chunking with continuous, differentiable density windows, mitigating boundary artifacts. (b) K-AMC leverages Kolmogorov-Arnold Networks (KAN) to map future exogenous features into dynamic scale ($\gamma$) and shift ($\beta$) parameters for conditional modulation.}
 \label{fig:micro_modules}
