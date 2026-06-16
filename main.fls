@@ -343,11 +343,16 @@ INPUT ./sections/related_work.tex
 INPUT ./sections/related_work.tex
 INPUT ./sections/related_work.tex
 INPUT sections/related_work.tex
+INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/adobe/times/ptmrc7t.tfm
 INPUT ./sections/problem_definition.tex
 INPUT ./sections/problem_definition.tex
 INPUT ./sections/problem_definition.tex
 INPUT ./sections/problem_definition.tex
 INPUT sections/problem_definition.tex
+INPUT e:/Environments/texlive/2026/texmf-dist/fonts/vf/adobe/times/ptmrc7t.vf
+INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/adobe/times/ptmr8r.tfm
+INPUT e:/Environments/texlive/2026/texmf-dist/fonts/vf/adobe/times/ptmb7t.vf
+INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm
 INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmbx10.tfm
 INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmbx7.tfm
 INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmbx5.tfm
@@ -394,8 +399,6 @@ INPUT e:/Environments/texlive/2026/texmf-dist/fonts/vf/adobe/times/ptmb7t.vf
 INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm
 INPUT e:/Environments/texlive/2026/texmf-dist/fonts/vf/adobe/times/ptmr7t.vf
 INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/adobe/times/ptmr8r.tfm
-INPUT e:/Environments/texlive/2026/texmf-dist/fonts/vf/adobe/times/ptmb7t.vf
-INPUT e:/Environments/texlive/2026/texmf-dist/fonts/tfm/adobe/times/ptmb8r.tfm
 INPUT e:/Environments/texlive/2026/texmf-dist/tex/latex/psnfss/omsptm.fd
 INPUT e:/Environments/texlive/2026/texmf-dist/tex/latex/psnfss/omsptm.fd
 INPUT e:/Environments/texlive/2026/texmf-dist/tex/latex/psnfss/omsptm.fd
