@@ -1,6 +1,6 @@
 # PhyST-Net Paper
 
-> **PhyST-Net: A Physics-Aware Differentiable Spatio-Temporal Transformer Network for Robust Wind Power Forecasting**
+> **PhyST-Net: A Physics-Aware Differentiable Spatio-Temporal Transformer Network for Constrained Network Forecasting**
 
 IEEE Transactions 期刊论文 LaTeX 源码与配套组会汇报资料。该项目已完成高度模块化重构与理论公式的严密对齐。
 
