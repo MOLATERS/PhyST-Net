@@ -21,121 +21,58 @@ H_F = \Phi_{exg}(H_G,\mathbf{E}^{f}),\quad \hat{\mathbf{Y}} = \Phi_{head}(H_F,\m
 \end{equation}
 where $\Phi_{patch}$ is AGSP, $\Phi_{temp}$ is the temporal Transformer encoder, $\Phi_{graph}$ is the graph adapter (R-STMF), $\Phi_{exg}$ is future-ExG conditioning (K-AMC), and $\Phi_{head}$ is the physics-informed prediction head (PI-DCH).
 
-\begin{figure*}[!t]
+\subsection{Adaptive Gaussian-soft-windowed Patching}
+\label{sec:agsp}
+Transformer-based forecasters conventionally mitigate sequence length by aggregating observations into discrete temporal patches. While computationally convenient, fixed non-overlapping patches inevitably induce boundary artifacts when the underlying physical signal transverses a patch boundary. AGSP supersedes rigid patch assignments with learnable Gaussian soft-windows. This differentiable formulation empowers the architecture to autonomously allocate dense receptive fields to highly transient events and broader, smoother fields to stable operational regimes.
+
+\begin{figure}[!t]
 \centering
-\scriptsize
 \begin{tikzpicture}[
     font=\sffamily,
     >=Stealth,
-    x=0.55cm, 
-    y=0.55cm,
-    panel/.style={draw, rounded corners=3pt, line width=0.7pt, fill=gray!2},
-    title/.style={font=\bfseries\small},
+    x=1.3cm, 
+    y=1.3cm,
     axis/.style={->, line width=0.8pt, draw=black!70},
-    signal/.style={gray!75, line width=0.7pt},
-    hard/.style={line width=0.8pt},
-    soft/.style={line width=0.8pt, fill opacity=0.3},
-    module/.style={draw, rounded corners=2pt, very thick, align=center, minimum height=0.4cm},
-    input/.style={module, fill=blue!6, draw=blue!60!black},
-    kan/.style={module, fill=teal!7, draw=teal!60!black},
-    cond/.style={module, fill=violet!8, draw=violet!60!black},
-    arrow/.style={->, line width=0.6pt, draw=black!75},
-    warn/.style={->, line width=0.7pt, draw=red!75!black},
+    signal/.style={gray!75, line width=0.9pt},
+    hard/.style={line width=1pt},
+    soft/.style={line width=1pt, fill opacity=0.25},
+    warn/.style={->, line width=0.8pt, draw=red!80!black},
     note/.style={font=\tiny, align=center}
 ]
-
-% Panel frames (1x3 Layout)
-\draw[panel] (0,0) rectangle (10.0, 7.5);   % (a) AGSP
-\draw[panel] (10.5,0) rectangle (20.5, 7.5); % (b) R-STMF
-\draw[panel] (21.0,0) rectangle (31.0, 7.5); % (c) K-AMC
-
-\node[title, anchor=north west] at (0.1, 7.4) {(a) AGSP Detail};
-\node[title, anchor=north west] at (10.6, 7.4) {(b) R-STMF Detail};
-\node[title, anchor=north west] at (21.1, 7.4) {(c) K-AMC Detail};
-
-% --- (a) AGSP Detail ---
-\begin{scope}[shift={(0.5, 4.0)}]
-    \node[anchor=west, font=\bfseries\tiny] at (0.0, 2.5) {Rigid Hard Patches};
-    \draw[axis] (0,0) -- (4,0) node[right] {$t$};
-    \draw[signal] plot[domain=0.2:3.8, samples=50] (\x,{0.8 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(10*\x))});
-    \draw[blue!70!black, hard] (0.5, 0) rectangle (1.5, 1.8);
-    \draw[orange!85!black, hard] (1.5, 0) rectangle (2.5, 1.8);
-    \draw[green!60!black, hard] (2.5, 0) rectangle (3.5, 1.8);
-    \draw[warn] (1.5, 2.2) -- (1.5, 1.9) node[pos=0, above, note, text=red] {Artifacts};
-\end{scope}
-\begin{scope}[shift={(0.5, 0.5)}]
-    \node[anchor=west, font=\bfseries\tiny] at (0.0, 2.5) {Soft Overlapping Gaussians};
-    \draw[axis] (0,0) -- (4,0) node[right] {$t$};
-    \draw[signal] plot[domain=0.2:3.8, samples=50] (\x,{0.8 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(10*\x))});
-    \path[fill=blue!20, draw=blue, soft] (0.2,0) plot[domain=0.2:1.8, samples=40] (\x,{1.5*exp(-((\x-1)^2)/0.2)}) -- (1.8,0) -- cycle;
-    \path[fill=orange!20, draw=orange, soft] (1.2,0) plot[domain=1.2:2.8, samples=40] (\x,{1.3*exp(-((\x-2)^2)/0.15)}) -- (2.8,0) -- cycle;
-    \path[fill=green!20, draw=green!60!black, soft] (2.2,0) plot[domain=2.2:3.8, samples=40] (\x,{1.6*exp(-((\x-3)^2)/0.25)}) -- (3.8,0) -- cycle;
-\end{scope}
-
-% --- (b) R-STMF Detail ---
-\begin{scope}[shift={(11.0, 0.5)}]
-    \node[draw, rounded corners=2pt, minimum width=2cm] (ht) at (4.5, 6.2) {$H_T$ (Latent Patches)};
-    \draw[arrow] (ht.south) -- ++(0,-0.5) node[midway, right, note] {Decomposition};
-    \node[draw, fill=orange!5, minimum width=3.5cm, minimum height=1cm, dashed] (split) at (4.5, 4.5) {};
-    \node[cond, text width=1.4cm] (hs) at (3.2, 4.5) {Seasonal $H_S$};
-    \node[cond, text width=1.4cm] (hr) at (5.8, 4.5) {Trend $H_R$};
-    \node[circle, draw, inner sep=1pt] (gs) at (3.2, 2.5) {GC};
-    \node[circle, draw, inner sep=1pt] (gr) at (5.8, 2.5) {GC};
-    \draw[panel, fill=red!5, opacity=0.6] (2.0, 2.0) rectangle (7.0, 3.0);
-    \node[note, text=red!80!black, font=\bfseries] at (4.5, 2.8) {Distance-Masked Top-$K$};
-    \draw[arrow] (hs.south) -- (gs.north);
-    \draw[arrow] (hr.south) -- (gr.north);
-    \node[circle, draw, thick, fill=white] (fuse) at (4.5, 1.0) {$\oplus$};
-    \draw[arrow] (gs.south) |- (fuse.west);
-    \draw[arrow] (gr.south) |- (fuse.east);
-    \draw[arrow] (fuse.south) -- ++(0,-0.5) node[below, font=\bfseries] {$H_G$};
-    \node[note, right] at (4.7, 1.0) {Gated Fusion};
-\end{scope}
-
-% --- (c) K-AMC Detail ---
-\begin{scope}[shift={(21.5, 0.5)}]
-    \node[input, text width=1.4cm] (ef) at (1.5, 6.2) {Future ExG $\mathbf{E}^f$};
-    \draw[arrow] (ef.south) -- ++(0,-0.5) node[midway, right, note] {Align};
-    \node[kan, minimum height=1.8cm, minimum width=2.8cm] (kanbox) at (1.5, 4.3) {};
-    \node[note, font=\bfseries] at (1.5, 5.0) {KAN Block};
-    \fill (0.7, 4.6) circle (1.5pt); \fill (2.3, 4.6) circle (1.5pt); \fill (1.5, 3.7) circle (1.5pt);
-    \draw[violet, ->, thick] (0.7, 4.6) .. controls (0.6, 4.1) and (1.0, 3.9) .. (1.5, 3.7) node[pos=0.4, left, note] {$\phi(x)$};
-    \draw[violet, ->, thick] (2.3, 4.6) .. controls (2.4, 4.1) and (2.0, 3.9) .. (1.5, 3.7);
-    \node[cond, text width=0.8cm] (gamma) at (0.7, 2.5) {$\gamma$};
-    \node[cond, text width=0.8cm] (beta) at (2.3, 2.5) {$\beta$};
-    \draw[line width=0.8pt] (1.5, 3.4) -- (1.5, 3.1);
-    \draw[arrow] (1.5, 3.1) -| (gamma.north);
-    \draw[arrow] (1.5, 3.1) -| (beta.north);
-    \node[draw, rounded corners=2pt, very thick, fill=white, minimum height=0.5cm, minimum width=1.8cm] (hg) at (6.5, 6.2) {$H_G$};
-    \node[draw, circle, thick, fill=white, minimum size=5mm, inner sep=0pt] (mul) at (6.5, 5.0) {$\otimes$};
-    \node[draw, circle, thick, fill=white, minimum size=5mm, inner sep=0pt] (add1) at (6.5, 3.8) {$\oplus$};
-    \node[draw, circle, thick, fill=white, minimum size=5mm, inner sep=0pt] (add2) at (6.5, 2.6) {$\oplus$};
-    \node[draw, rounded corners=2pt, very thick, fill=blue!6, draw=blue!60!black, minimum width=2.4cm, minimum height=0.6cm] (hf) at (6.5, 1.2) {\textbf{Conditioned State} $H_F$};
-    \draw[arrow] (hg.south) -- (mul.north);
-    \draw[arrow] (mul.south) -- (add1.north);
-    \draw[arrow] (add1.south) -- (add2.north);
-    \draw[arrow] (add2.south) -- (hf.north);
-    \draw[arrow] (gamma.east) -- ++(3.5, 0) |- (mul.west);
-    \draw[arrow] (beta.east) -- ++(2.0, 0) |- (add1.west);
-    \draw[arrow] (hg.east) -- ++(0.8, 0) |- (add2.east);
-    \node[note, anchor=west] at (7.4, 4.4) {Residual\\$\times 0.1$};
-\end{scope}
-
+    % (a) Rigid
+    \begin{scope}[shift={(0, 2.2)}]
+        \node[anchor=west, font=\bfseries\small] at (0, 1.2) {Traditional Rigid Hard Patches};
+        \draw[axis] (0,0) -- (3.2,0) node[right] {$t$};
+        \draw[signal] plot[domain=0.2:3.0, samples=60] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
+        \draw[blue!70!black, hard] (0.4, 0) rectangle (1.2, 1.0);
+        \draw[orange!85!black, hard] (1.2, 0) rectangle (2.0, 1.0);
+        \draw[green!60!black, hard] (2.0, 0) rectangle (2.8, 1.0);
+        \node[note, text=red!80!black, font=\bfseries] (art) at (1.6, 1.4) {Boundary Artifacts};
+        \draw[warn] (art.west) -- (1.2, 1.05);
+        \draw[warn] (art.east) -- (2.0, 1.05);
+    \end{scope}
+    
+    % (b) Soft
+    \begin{scope}[shift={(0, 0)}]
+        \node[anchor=west, font=\bfseries\small] at (0, 1.2) {Proposed Adaptive Gaussian Soft-windows};
+        \draw[axis] (0,0) -- (3.2,0) node[right] {$t$};
+        \draw[signal] plot[domain=0.2:3.0, samples=60] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
+        \path[fill=blue!20, draw=blue, soft] (0.2,0) plot[domain=0.2:1.8, samples=40] (\x,{1.1*exp(-((\x-1)^2)/0.15)}) -- (1.8,0) -- cycle;
+        \path[fill=orange!20, draw=orange, soft] (0.8,0) plot[domain=0.8:2.4, samples=40] (\x,{0.9*exp(-((\x-1.6)^2)/0.1)}) -- (2.4,0) -- cycle;
+        \path[fill=green!20, draw=green!60!black, soft] (1.4,0) plot[domain=1.4:3.0, samples=40] (\x,{1.2*exp(-((\x-2.2)^2)/0.2)}) -- (3.0,0) -- cycle;
+        \node[note, anchor=west] at (0.2, -0.3) {* Overlapping regions ensure temporal continuity.};
+    \end{scope}
 \end{tikzpicture}
-\caption{Internal mechanics of the key coupled modules. (a) AGSP replaces discrete sequence chunking with continuous, differentiable density windows to mitigate boundary artifacts. (b) R-STMF performs manifold decomposition on latent patches, independently processing seasonal and trend components via distance-masked graph convolution. (c) K-AMC leverages Kolmogorov-Arnold Networks (KAN) to parameterize the mapping from future exogenous drivers to latent modulation parameters.}
-\label{fig:micro_modules}
-\end{figure*}
-
-\subsection{Adaptive Gaussian-soft-windowed Patching}
-\label{sec:agsp}
-Transformer-based forecasters conventionally mitigate sequence length by aggregating observations into discrete temporal patches. While computationally convenient, fixed non-overlapping patches inevitably induce boundary artifacts when the underlying physical signal transverses a patch boundary. Aligning with emerging principles in complexity-balanced sequence modeling---where representational capacity is dynamically distributed proportional to signal variation---AGSP supersedes rigid patch assignments with learnable Gaussian soft-windows. This differentiable formulation empowers the architecture to autonomously allocate dense receptive fields to highly transient events and broader, smoother fields to stable operational regimes.
+\caption{Mechanics of AGSP. By replacing discrete sequence chunking with continuous, differentiable density windows, the model autonomously mitigates boundary artifacts and atmospheric noise.}
+\label{fig:agsp_detail}
+\end{figure}
 
 For node $n$ and temporal window $i$, the unnormalized weight at time index $\tau\in\{1,\ldots,T\}$ is
 \begin{equation}
 W_i(\tau)=\exp\left(-\frac{(\tau-\mu_i)^2}{2\sigma_i^2+\epsilon}\right),
 \label{eq:agsp_window}
 \end{equation}
-where $\mu_i$ and $\sigma_i$ are learnable center and bandwidth parameters. To ensure numerical stability and valid window properties, we parameterize the bandwidth as $\sigma_i = \text{softplus}(\rho_i) + \delta$, where $\rho_i$ is the learnable parameter. The weights are normalized across $P$ windows:
+where $\mu_i$ and $\sigma_i$ are learnable center and bandwidth parameters. The centers $\mu_i$ are initialized to uniform grid locations across the historical window to encourage an ordered temporal partition. The weights are normalized across $P$ windows:
 \begin{equation}
 \tilde{W}_i(\tau)=\frac{W_i(\tau)}{\sum_{j=1}^{P}W_j(\tau)+\epsilon}.
 \label{eq:agsp_norm}
@@ -145,102 +82,135 @@ Let $\bar{x}_{n}(\tau)$ denote the embedded historical state. The token for node
 z_{n,i}=\psi\left(\sum_{\tau=1}^{T}\tilde{W}_i(\tau)\bar{x}_{n}(\tau)\right)+e_n+p_i,
 \label{eq:agsp_token}
 \end{equation}
-where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$ is a temporal patch embedding. This formulation allows the model to optimize the temporal receptive fields directly from the forecast loss.
+where $\psi(\cdot)$ is a linear projection, $e_n$ is a node embedding, and $p_i$ is a temporal patch embedding.
 
 \subsection{Temporal Representation Learning}
 \label{sec:temporal_encoder}
-Adopting the global token philosophy \cite{wang2024timexer} to facilitate efficient long-range context fusion, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck, aggregating the macroscopic temporal representation across all local patches. 
-
-We denote the temporal encoding backbone as $\operatorname{STEnc}(\cdot)$. In PhyST-Net, rather than a naive standard Transformer, STEnc incorporates a targeted cross-attention mechanism. Specifically, within each encoder layer, the augmented node-wise token sequence $[Z \parallel z_{global}]$ first undergoes standard multi-head self-attention. Subsequently, to enrich the macro-trend representation with system-wide context, the global token uniquely cross-attends to the embedded historical exogenous features, acting as an information sink:
+Adopting the global token philosophy \cite{wang2024timexer}, the token tensor $Z$ is concatenated with a learnable global token $z_{global} \in \mathbb{R}^{B \times N \times 1 \times d}$ for each node. This global token serves as a sequence-level memory bottleneck. In PhyST-Net, rather than a naive standard Transformer, STEnc incorporates a targeted cross-attention mechanism where the global token uniquely cross-attends to the embedded historical exogenous features:
 \begin{equation}
 z_{global}' = z_{global} + \operatorname{CrossAttention}(z_{global}, \mathbf{E}^h, \mathbf{E}^h).
 \label{eq:cross_attention}
 \end{equation}
-This contextually enriched sequence is then processed through the feed-forward networks, yielding the final temporal representation:
-\begin{equation}
-H_T=\operatorname{STEnc}([Z \parallel z_{global}]), \quad H_T\in\mathbb{R}^{B\times N\times (P+1)\times d}.
-\label{eq:temporal_encoder}
-\end{equation}
-Crucially, rather than discarding the global token post-encoding, PhyST-Net structurally leverages it to separate the node's state into two distinct manifolds: a local-variation patch state $U \triangleq H_{T,1:P}$ and a macro-trend global state $R \triangleq H_{T,P+1}$.
+This contextually enriched sequence is then processed through the feed-forward networks, yielding the final temporal representation $H_T=\operatorname{STEnc}([Z \parallel z_{global}])$. Crucially, PhyST-Net leverages the global token to separate the node's state into two distinct manifolds: a local-variation patch state $U \triangleq H_{T,1:P}$ and a macro-trend global state $R \triangleq H_{T,P+1}$.
 
 \subsection{Relational Spatio-Temporal Manifold Fusion (R-STMF)}
 \label{sec:rstmf}
-R-STMF serves as the graph adapter, specifically designed to capture the multi-modal spatial dependencies inherent in physical networks. Unlike conventional graph operators that treat node features as monolithic vectors, R-STMF recognizes that spatial interactions occur across different temporal scales within the latent space. To address this, we perform a **Latent Patch Manifold Decomposition** on the temporal representation $H_T \in \mathbb{R}^{B \times N \times P \times d}$.
+R-STMF serves as the graph adapter. Unlike conventional graph operators, R-STMF performs a **Latent Patch Manifold Decomposition** on the temporal representation $H_T$. For each node $n$, we apply a 1D depth-wise convolution along the patch dimension to extract the seasonal component $H_{S}$, while the residual represents the trend component $H_{R}$:
+\begin{equation}
+H_{S} = \operatorname{GELU}(\operatorname{Conv1d}(H_T)), \quad H_{R} = H_T - H_{S}.
+\label{eq:rstmf_decomp}
+\end{equation}
 
-Specifically, for each node $n$, we treat the sequence of $P$ latent patches as a low-resolution temporal manifold. We apply a 1D depth-wise convolution along the patch dimension to extract the seasonal (periodic/oscillatory) component $H_{S}$, while the residual represents the trend (drifting/low-frequency) component $H_{R}$:
-\begin{align}
-H_{S} &= \operatorname{GELU}(\operatorname{Conv1d}(H_T)), \label{eq:rstmf_decomp_s} \\
-H_{R} &= H_T - H_{S}. \label{eq:rstmf_decomp_r}
-\end{align}
-This decomposition ensures that the model can independently learn how macro-scale trends and micro-scale seasonal fluctuations propagate through the graph.
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[
+    font=\sffamily,
+    >=Stealth,
+    x=1.2cm, 
+    y=1.2cm,
+    module/.style={draw, rounded corners=3pt, very thick, align=center, minimum height=0.5cm},
+    cond/.style={module, fill=violet!8, draw=violet!60!black, minimum width=1.8cm},
+    arrow/.style={->, line width=0.8pt, draw=black!75},
+    note/.style={font=\tiny, align=center}
+]
+    % HT node
+    \node[module, minimum width=4cm] (ht) at (1.5, 4.2) {$H_T$ (Latent Representation)};
+    
+    % Decomp block
+    \draw[arrow] (ht.south) -- ++(0,-0.7) node[midway, right, note] {Latent Patch Decomp.};
+    \node[cond] (hs) at (0, 2.7) {Seasonal $H_S$};
+    \node[cond] (hr) at (3.0, 2.7) {Trend $H_R$};
+    
+    % Graph operations
+    \node[circle, draw, thick, fill=teal!5] (gs) at (0, 1.4) {GC};
+    \node[circle, draw, thick, fill=teal!5] (gr) at (3.0, 1.4) {GC};
+    \draw[draw=red!70!black, dashed, line width=1.2pt, rounded corners] (-1.0, 1.0) rectangle (4.0, 1.8);
+    \node[note, text=red!80!black, font=\bfseries] at (1.5, 0.7) {Distance-Masked Top-$K$ Interaction};
+    
+    \draw[arrow] (hs.south) -- (gs.north);
+    \draw[arrow] (hr.south) -- (gr.north);
+    
+    % Fusion
+    \node[circle, draw, very thick, fill=white] (fuse) at (1.5, 0) {$\oplus$};
+    \draw[arrow] (gs.south) |- (fuse.west);
+    \draw[arrow] (gr.south) |- (fuse.east);
+    \draw[arrow] (fuse.south) -- ++(0,-0.6) node[below, font=\bfseries] {$H_G$ (Graph-Enhanced State)};
+    \node[note, right] at (1.7, 0) {Gated Fusion};
+\end{tikzpicture}
+\caption{Detailed architecture of R-STMF. Latent patch sequences are decomposed into seasonal and trend manifolds, which independently undergo distance-masked graph convolution prior to gated fusion.}
+\label{fig:rstmf_detail}
+\end{figure}
 
 \subsubsection{Distance-Masked Relational Pruning}
-For each manifold $c \in \{S, R\}$, we compute relational attention scores across nodes. To enforce physical realism and reduce computational overhead, we introduce a **Distance-Masked Top-$K$ Pruning** strategy. Given a physical distance matrix or prior topology, we define a binary mask $\mathcal{M}_{dist}$, where $\mathcal{M}_{ij}=1$ only if node $j$ is within a feasible interaction radius of node $i$. The masked attention score $S_c$ is:
+To enforce spatial locality, we introduce a **Distance-Masked Top-$K$ Pruning** strategy. Given a binary mask $\mathcal{M}_{dist}$ based on a feasible interaction radius, the attention scores are:
 \begin{equation}
-S_{c,ij} = \begin{cases} \frac{Q_c(K_c)^{\top}}{\sqrt{d_m}} & \text{if } \mathcal{M}_{ij}=1 \\ -\infty & \text{otherwise} \end{cases}.
-\label{eq:rstmf_score_mask}
+S_{c,ij} = \begin{cases} \frac{Q_c(K_c)^{\top}}{\sqrt{d_m}} & \text{if } \mathcal{M}_{ij}=1 \\ -\infty & \text{otherwise} \end{cases}, \quad A_c=\operatorname{Softmax}\left(\operatorname{TopK}(S_c, K_c)\right).
+\label{eq:rstmf_routing}
 \end{equation}
-Subsequently, we perform Top-$K$ selection on the remaining scores to ensure a sparse and robust graph routing:
-\begin{equation}
-A_c=\operatorname{Softmax}\left(\operatorname{TopK}(S_c, K_c)\right).
-\label{eq:rstmf_topk}
-\end{equation}
-Finally, the graph-enhanced seasonal and trend manifolds are recombined using a learnable gated fusion mechanism:
-\begin{align}
-g &= \sigma(\operatorname{Linear}([H_{G,S} \parallel H_{G,R}])), \\
-H_G &= g \odot H_{G,S} + (1-g) \odot H_{G,R},
-\label{eq:rstmf_fusion}
-\end{align}
-where $H_{G,c}$ denotes the manifold $c$ after spatial propagation via $A_c$.
 
 \subsection{Future-ExG Conditioning (K-AMC)}
 \label{sec:kamc}
-We refer to this module as K-AMC, short for KAN-enhanced Adaptive Modulation and Conditioning. It serves as a generalized interface for known systemic drivers, injecting future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. Aligning with the TimeXer philosophy \cite{wang2024timexer}, the macro-trend global token acts as the primary bridge to cross-attend and ingest external factors. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{(P+1) \times d_{exg}}$ that maps the future horizon into variate tokens corresponding to the global and patch states. 
+K-AMC serves as a generalized interface for known systemic drivers, injecting future exogenous drivers $\mathbf{E}^f$ into the latent representations. An alignment operator $\Gamma$ maps the future horizon into variate tokens. These are passed through a Kolmogorov-Arnold Network (KAN) block which parameterizes transformations using learnable univariate B-spline functions $\phi(x) = w_b \operatorname{SiLU}(x) + \sum_{i=1}^{k} c_i B_i(x)$.
 
-The aligned representation $\bar{\mathbf{E}}^f$ is then passed through a Kolmogorov-Arnold Network (KAN) block. Unlike standard MLPs, KANs parameterize transformations using learnable univariate B-spline functions on the edges. For an input feature $x$, the edge function is defined as:
-\begin{equation}
-\phi(x) = w_b \operatorname{SiLU}(x) + \sum_{i=1}^{k} c_i B_i(x),
-\label{eq:kan_edge_sum}
-\end{equation}
-where $B_i(x)$ are B-spline basis functions. The analytical derivative is:
-\begin{equation}
-\frac{\partial \phi(x)}{\partial x} = w_b \operatorname{SiLU}'(x) + \sum_{i=1}^{k} c_i B'_i(x).
-\label{eq:kan_derivative}
-\end{equation}
-By aggregating these edge functions, the KAN block produces modulation parameters:
-\begin{equation}
-[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f), \quad \gamma, \beta \in \mathbb{R}^{B \times N \times (P+1) \times d}.
-\label{eq:kamc_kan}
-\end{equation}
-The conditioned latent state is then obtained via element-wise scale and shift:
-\begin{equation}
-H_F=H_G+\lambda\left(\gamma\odot H_G+\beta-H_G\right).
-\label{eq:kamc_mod}
-\end{equation}
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[
+    font=\sffamily,
+    >=Stealth,
+    x=1.3cm, 
+    y=1.3cm,
+    module/.style={draw, rounded corners=3pt, very thick, align=center},
+    input/.style={module, fill=blue!6, draw=blue!60!black, minimum width=2cm, minimum height=0.6cm},
+    kan/.style={module, fill=teal!7, draw=teal!60!black, minimum width=2.8cm, minimum height=1.6cm},
+    cond/.style={module, fill=violet!8, draw=violet!60!black, minimum width=1.0cm, minimum height=0.5cm},
+    arrow/.style={->, line width=0.8pt, draw=black!75},
+    note/.style={font=\tiny, align=center}
+]
+    % Left side
+    \node[input] (ef) at (0, 3.8) {Future ExG $\mathbf{E}^f$};
+    \draw[arrow] (ef.south) -- ++(0,-0.5) node[midway, right, note] {Temporal Align};
+    
+    \node[kan] (kanbox) at (0, 2.2) {};
+    \node[anchor=north, font=\bfseries\small] at (0, 3.0) {KAN Block};
+    \fill (-0.7, 2.5) circle (1.5pt); \fill (0.7, 2.5) circle (1.5pt); \fill (0, 1.7) circle (1.5pt);
+    \draw[violet, ->, line width=1.1pt] (-0.7, 2.5) .. controls (-0.6, 2.1) and (-0.2, 1.9) .. (0, 1.7) node[midway, left, note] {$\phi(x)$};
+    \draw[violet, ->, line width=1.1pt] (0.7, 2.5) .. controls (0.6, 2.1) and (0.2, 1.9) .. (0, 1.7);
+
+    \node[cond] (gamma) at (-0.7, 0.6) {$\gamma$};
+    \node[cond] (beta) at (0.7, 0.6) {$\beta$};
+    \draw[line width=1pt, draw=black!75] (0, 1.4) -- (0, 1.1);
+    \draw[arrow] (0, 1.1) -| (gamma.north);
+    \draw[arrow] (0, 1.1) -| (beta.north);
+
+    % Right side
+    \node[module, fill=white, minimum width=1.8cm, minimum height=0.6cm] (hg) at (3.5, 3.8) {$H_G$};
+    \node[draw, circle, thick, fill=white, minimum size=6mm, inner sep=0pt] (mul) at (3.5, 2.7) {$\otimes$};
+    \node[draw, circle, thick, fill=white, minimum size=6mm, inner sep=0pt] (add1) at (3.5, 1.6) {$\oplus$};
+    \node[draw, circle, thick, fill=white, minimum size=6mm, inner sep=0pt] (add2) at (3.5, 0.5) {$\oplus$};
+    \node[module, fill=blue!6, draw=blue!60!black, minimum width=2.6cm, minimum height=0.7cm] (hf) at (3.5, -0.7) {\textbf{Conditioned State} $H_F$};
+
+    \draw[arrow] (hg.south) -- (mul.north);
+    \draw[arrow] (mul.south) -- (add1.north);
+    \draw[arrow] (add1.south) -- (add2.north);
+    \draw[arrow] (add2.south) -- (hf.north);
+
+    \draw[arrow] (gamma.east) -- ++(2.0, 0) |- (mul.west);
+    \draw[arrow] (beta.east) -- ++(0.6, 0) |- (add1.west);
+    \draw[arrow] (hg.east) -- ++(0.8, 0) |- (add2.east);
+    \node[note, anchor=west] at (4.4, 2.2) {Res. Scale\\$\times 0.1$};
+\end{tikzpicture}
+\caption{Mechanics of K-AMC. Future exogenous drivers are aligned and processed through spline-based KAN edges to produce dynamic modulation parameters.}
+\label{fig:kamc_detail}
+\end{figure}
+
+The KAN block produces modulation parameters $[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f)$. The conditioned latent state is then obtained via element-wise scale and shift: $H_F=H_G+\lambda\left(\gamma\odot H_G+\beta-H_G\right)$.
 
 \subsection{Physics-Informed Dynamic Capping Head (PI-DCH)}
 \label{sec:pidch}
-PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$. In mission-critical environments such as smart grids and industrial control systems, deploying predictive models mandates rigorous output-space guidance to preclude physically unfeasible trajectories.
+PI-DCH instantiates the constraint operator $\mathcal{C}_{\Omega}$ through a dual-stage enforcement strategy. While $\hat{Y}_{soft} = \tilde{Y}+u\odot(C_{dyn}-\tilde{Y})$ provides the differentiable path necessary for optimization, we define the final deployment-ready forecast $\hat{\mathbf{Y}}$ through a Euclidean projection $\hat{\mathbf{Y}} = \operatorname{Proj}_{\mathcal{K}}(\hat{Y}_{soft}) \triangleq \max(0, \min(\hat{Y}_{soft}, C_{dyn}))$, where $\mathcal{K} = [0, C_{dyn}]$.
 
-To ensure that the model remains physically consistent even under extreme scenarios, we adopt a dual-stage enforcement strategy. While $\hat{Y}_{soft}$ provides the differentiable path necessary for optimization, we define the final deployment-ready forecast $\hat{\mathbf{Y}}$ through a \textbf{Strict Operational Boundary Enforcement} layer:
-\begin{equation}
-\hat{\mathbf{Y}} = \operatorname{Proj}_{\mathcal{K}}(\hat{Y}_{soft}) \triangleq \max(0, \min(\hat{Y}_{soft}, C_{dyn})),
-\label{eq:pidch_enforcement}
-\end{equation}
-where $\operatorname{Proj}_{\mathcal{K}}$ denotes the Euclidean projection onto the dynamic feasible set $\mathcal{K} = [0, C_{dyn}]$. Crucially, this projection is treated as a non-trainable safety layer during inference to guarantee 100\% compliance with physical limits. By decoupling the differentiable steering ($\hat{Y}_{soft}$) from the strict enforcement ($\hat{\mathbf{Y}}$), PhyST-Net achieves the dual goals of stable gradient backpropagation and absolute operational feasibility.
-
-\subsection{Computational Complexity Analysis}
-\label{sec:complexity_analysis}
-In the temporal pathway, the AGSP module compresses the raw $T$-length sequence into $P$ continuous tokens (where $P \ll T$). Consequently, the temporal Transformer encoder's self-attention complexity is reduced from $\mathcal{O}(N \cdot T^2)$ to $\mathcal{O}(N \cdot P^2)$. In the spatial pathway, the R-STMF module introduces a Top-$K$ sparse masking strategy, restricting message passing to a parameterized neighborhood size $K$. This bounds the spatial complexity to $\mathcal{O}(P \cdot K \cdot N)$. Thus, the overall self-attention complexity of the PhyST-Net backbone is decoupled and bounded by $\mathcal{O}(N \cdot P^2 + P \cdot K \cdot N)$, rendering the architecture highly scalable.
-
-\subsection{Optimization Objective}
-\label{sec:optimization}
-We minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mae} + \lambda_{\Omega}\mathcal{L}_{penalty}$. The penalty term $\mathcal{L}_{penalty}$ structurally regularizes the model to internalize the operational set $\Omega$ during backpropagation:
-\begin{align}
-\mathcal{L}_{penalty} &= \mathcal{L}_{neg} + \mathcal{L}_{cap}, \label{eq:feasibility_penalty_total} \\
-\mathcal{L}_{neg} &= \frac{1}{|\mathcal{D}|HN} \sum_{\mathcal{D}} \sum_{n,h} [-\hat{Y}_{soft,n,h}]^+, \label{eq:feasibility_penalty_neg} \\
-\mathcal{L}_{cap} &= \frac{1}{|\mathcal{D}|HN} \sum_{\mathcal{D}} \sum_{n,h} [\hat{Y}_{soft,n,h} - C_{dyn,n,h}]^+. \label{eq:feasibility_penalty_cap}
-\end{align}
+\subsection{Computational Complexity and Optimization}
+PhyST-Net reduces the complexity of dense ST-Transformers from $\mathcal{O}(N T^2 + T N^2)$ to $\mathcal{O}(N P^2 + P K N)$ through its decoupled topology. The model parameters $\theta$ are optimized by minimizing a multi-objective loss $\mathcal{L} = \mathcal{L}_{mae} + \lambda_{\Omega}(\mathcal{L}_{neg} + \mathcal{L}_{cap})$.
 
 \begin{algorithm}[!t]
 \caption{PhyST-Net Forward Pass}
@@ -248,32 +218,11 @@ We minimize a multi-objective loss $\mathcal{L} = \mathcal{L}_{mae} + \lambda_{\
 \begin{algorithmic}[1]
 \REQUIRE Input tuple $\mathcal{X}_t = (\mathbf{X}, \mathbf{E}^h, \mathbf{E}^f, A, M_G)$, Domain knowledge $\Omega$.
 \ENSURE Feasible network forecast $\hat{\mathbf{Y}}$.
-
-\STATE \COMMENT{\textit{Phase I: AGSP Continuous Tokenization}}
-\STATE Initialize learnable Gaussian parameters $\mu_i, \sigma_i$ for $P$ tokens using metadata $M_G$.
-\FOR{each token $i \in \{1,\ldots,P\}$}
-    \STATE Compute soft-window weights $W_i(\tau) = \exp\left(-\frac{(\tau-\mu_i)^2}{2\sigma_i^2+\epsilon}\right)$.
-    \STATE Aggregate $\mathbf{X}$ and $\mathbf{E}^h$ via $W_i(\tau)$ to form continuous token $Z_{:,i,:}$.
-\ENDFOR
-
-\STATE \COMMENT{\textit{Phase II: Temporal Encoding ($\mathcal{H}_\theta$ part 1)}}
-\STATE Process $Z$ via Multi-Head Self-Attention to capture temporal dependencies $\to H_T$.
-
-\STATE \COMMENT{\textit{Phase III: R-STMF Graph Adaptation ($\mathcal{H}_\theta$ part 2)}}
-\STATE Decompose $H_T$ into seasonal $H_S$ and trend $H_R$ manifolds.
-\STATE Apply Top-$K$ sparse masking to $A$ based on spatial similarities and physical distances.
-\STATE Propagate $H_S$ and $H_R$ over the masked graph and fuse $\to H_G$.
-
-\STATE \COMMENT{\textit{Phase IV: K-AMC Exogenous Modulation ($\mathcal{H}_\theta$ part 3)}}
-\STATE Align horizon-wise $\mathbf{E}^f$ to patch-wise representation $\bar{\mathbf{E}}^f$.
-\STATE Compute B-spline edge functions via KAN block to generate $[\gamma, \beta]$.
-\STATE Modulate latent states: $H_F \leftarrow H_G + \lambda(\gamma \odot H_G + \beta - H_G)$.
-
-\STATE \COMMENT{\textit{Phase V: PI-DCH Constraint Decoding ($\mathcal{C}_\Omega$)}}
-\STATE Decode unconstrained prediction $\tilde{Y} = \operatorname{Linear}(H_F)$.
-\STATE Shape prediction softly: $\hat{Y}_{soft} \leftarrow \tilde{Y} + u \odot (C_{dyn} - \tilde{Y})$.
-\STATE Project to feasible set: $\hat{\mathbf{Y}} \leftarrow \operatorname{Proj}_{\mathcal{K}}(\hat{Y}_{soft})$.
-
+\STATE Compress $\mathbf{X}, \mathbf{E}^h$ via AGSP into tokens $Z$.
+\STATE Process $Z$ with cross-attention on $\mathbf{E}^h$ to get $H_T$.
+\STATE Decompose $H_T$ and propagate over masked graph (R-STMF) $\to H_G$.
+\STATE Modulate $H_G$ with future $\mathbf{E}^f$ via KAN (K-AMC) $\to H_F$.
+\STATE Shape and project output via barrier gate (PI-DCH) $\to \hat{\mathbf{Y}}$.
 \RETURN $\hat{\mathbf{Y}}$.
 \end{algorithmic}
 \end{algorithm}
