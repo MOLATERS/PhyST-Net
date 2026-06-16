@@ -30,37 +30,36 @@ Transformer-based forecasters conventionally mitigate sequence length by aggrega
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.3cm, 
-    y=1.3cm,
+    x=1.3cm, y=1.3cm,
     axis/.style={->, line width=0.8pt, draw=black!70},
-    signal/.style={gray!75, line width=0.9pt},
-    hard/.style={line width=1pt},
+    signal/.style={gray!70, line width=1pt},
+    hard/.style={line width=1pt, fill opacity=0.1},
     soft/.style={line width=1pt, fill opacity=0.25},
     warn/.style={->, line width=0.8pt, draw=red!80!black},
     note/.style={font=\tiny, align=center}
 ]
     % (a) Rigid
-    \begin{scope}[shift={(0, 2.2)}]
-        \node[anchor=west, font=\bfseries\small] at (0, 1.2) {Traditional Rigid Hard Patches};
-        \draw[axis] (0,0) -- (3.2,0) node[right] {$t$};
-        \draw[signal] plot[domain=0.2:3.0, samples=60] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
-        \draw[blue!70!black, hard] (0.4, 0) rectangle (1.2, 1.0);
-        \draw[orange!85!black, hard] (1.2, 0) rectangle (2.0, 1.0);
-        \draw[green!60!black, hard] (2.0, 0) rectangle (2.8, 1.0);
-        \node[note, text=red!80!black, font=\bfseries] (art) at (1.6, 1.4) {Boundary Artifacts};
-        \draw[warn] (art.west) -- (1.2, 1.05);
-        \draw[warn] (art.east) -- (2.0, 1.05);
+    \begin{scope}[shift={(0, 2.5)}]
+        \node[anchor=south west, font=\bfseries\small] at (0, 1.4) {Traditional Rigid Hard Patches};
+        \draw[axis] (0,0) -- (3.5,0) node[right] {$t$};
+        \draw[signal] plot[domain=0.2:3.2, samples=100] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
+        \draw[blue!70!black, hard, fill=blue!10] (0.4, 0) rectangle (1.2, 1.2);
+        \draw[orange!85!black, hard, fill=orange!10] (1.2, 0) rectangle (2.0, 1.2);
+        \draw[green!60!black, hard, fill=green!10] (2.0, 0) rectangle (2.8, 1.2);
+        \node[text=red!80!black, font=\bfseries\scriptsize, align=center] (art) at (1.6, 1.7) {Boundary\\Artifacts};
+        \draw[warn] (art.south west) -- (1.2, 1.25);
+        \draw[warn] (art.south east) -- (2.0, 1.25);
     \end{scope}
     
     % (b) Soft
     \begin{scope}[shift={(0, 0)}]
-        \node[anchor=west, font=\bfseries\small] at (0, 1.2) {Proposed Adaptive Gaussian Soft-windows};
-        \draw[axis] (0,0) -- (3.2,0) node[right] {$t$};
-        \draw[signal] plot[domain=0.2:3.0, samples=60] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
-        \path[fill=blue!20, draw=blue, soft] (0.2,0) plot[domain=0.2:1.8, samples=40] (\x,{1.1*exp(-((\x-1)^2)/0.15)}) -- (1.8,0) -- cycle;
-        \path[fill=orange!20, draw=orange, soft] (0.8,0) plot[domain=0.8:2.4, samples=40] (\x,{0.9*exp(-((\x-1.6)^2)/0.1)}) -- (2.4,0) -- cycle;
-        \path[fill=green!20, draw=green!60!black, soft] (1.4,0) plot[domain=1.4:3.0, samples=40] (\x,{1.2*exp(-((\x-2.2)^2)/0.2)}) -- (3.0,0) -- cycle;
-        \node[note, anchor=west] at (0.2, -0.3) {* Overlapping regions ensure temporal continuity.};
+        \node[anchor=south west, font=\bfseries\small] at (0, 1.4) {Proposed Adaptive Gaussian Soft-windows};
+        \draw[axis] (0,0) -- (3.5,0) node[right] {$t$};
+        \draw[signal] plot[domain=0.2:3.2, samples=100] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
+        \path[fill=blue!20, draw=blue!80!black, soft] (0.2,0) plot[domain=0.2:1.8, samples=50] (\x,{1.1*exp(-((\x-1)^2)/0.15)}) -- (1.8,0) -- cycle;
+        \path[fill=orange!20, draw=orange!90!black, soft] (0.8,0) plot[domain=0.8:2.4, samples=50] (\x,{0.9*exp(-((\x-1.6)^2)/0.1)}) -- (2.4,0) -- cycle;
+        \path[fill=green!20, draw=green!60!black, soft] (1.4,0) plot[domain=1.4:3.0, samples=50] (\x,{1.2*exp(-((\x-2.2)^2)/0.2)}) -- (3.0,0) -- cycle;
+        \node[anchor=north west, font=\tiny\itshape, text=black!70] at (0.2, -0.3) {* Overlapping continuous regions preserve temporal continuity and adapt to volatility.};
     \end{scope}
 \end{tikzpicture}
 \caption{Mechanics of AGSP. By replacing discrete sequence chunking with continuous, differentiable density windows, the model autonomously mitigates boundary artifacts and atmospheric noise.}
@@ -115,36 +114,37 @@ H_{R} &= H_T - H_{S}. \label{eq:rstmf_decomp_r}
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.2cm, 
-    y=1.2cm,
-    module/.style={draw, rounded corners=3pt, very thick, align=center, minimum height=0.5cm},
-    cond/.style={module, fill=violet!8, draw=violet!60!black, minimum width=1.5cm},
-    arrow/.style={->, line width=0.8pt, draw=black!75},
+    x=1.3cm, y=1.2cm,
+    module/.style={draw, rounded corners=3pt, very thick, align=center, minimum height=0.6cm, fill=white},
+    cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=2.0cm},
+    arrow/.style={->, line width=0.9pt, draw=black!75},
     note/.style={font=\tiny, align=center}
 ]
     % HT node
-    \node[module, minimum width=3cm] (ht) at (1.5, 4.0) {$H_T$ (Latent Representation)};
+    \node[module, minimum width=4.5cm, fill=gray!5] (ht) at (1.5, 4.5) {\textbf{$H_T$} (Latent Representation)};
     
     % Decomp block
-    \draw[arrow] (ht.south) -- ++(0,-0.6) node[midway, right, note] {Patch-wise Decomp.};
-    \node[cond] (hs) at (0, 2.5) {Seasonal $H_S$};
-    \node[cond] (hr) at (3.0, 2.5) {Trend $H_R$};
+    \draw[arrow] (ht.south) -- ++(0,-0.8) node[midway, right, align=left] {1D Conv\\Latent Patch Decomp.};
+    \node[cond] (hs) at (0, 2.8) {\textbf{Seasonal} $H_S$};
+    \node[cond] (hr) at (3.0, 2.8) {\textbf{Trend} $H_R$};
+    
+    % Background Box for Graph Ops
+    \draw[draw=red!60!black, dashed, line width=1pt, rounded corners=4pt, fill=red!3] (-1.2, 0.8) rectangle (4.2, 1.9);
+    \node[text=red!80!black, font=\bfseries] at (1.5, 1.65) {Distance-Masked Top-$K$ Graph Interaction};
     
     % Graph operations
-    \node[circle, draw, thick, fill=teal!5] (gs) at (0, 1.2) {GC};
-    \node[circle, draw, thick, fill=teal!5] (gr) at (3.0, 1.2) {GC};
-    \draw[draw=red!70!black, dashed, line width=1pt, rounded corners] (-0.8, 0.8) rectangle (3.8, 1.6);
-    \node[note, text=red!80!black, font=\bfseries] at (1.5, 0.6) {Distance-Masked Top-$K$ Interaction};
+    \node[circle, draw, thick, fill=teal!10, minimum size=0.7cm] (gs) at (0, 1.2) {GC};
+    \node[circle, draw, thick, fill=teal!10, minimum size=0.7cm] (gr) at (3.0, 1.2) {GC};
     
     \draw[arrow] (hs.south) -- (gs.north);
     \draw[arrow] (hr.south) -- (gr.north);
     
     % Fusion
-    \node[circle, draw, very thick, fill=white] (fuse) at (1.5, 0) {$\oplus$};
-    \draw[arrow] (gs.south) |- (fuse.west);
-    \draw[arrow] (gr.south) |- (fuse.east);
-    \draw[arrow] (fuse.south) -- ++(0,-0.6) node[below, font=\bfseries] {$H_G$ (Graph-Enhanced State)};
-    \node[note, right] at (1.7, 0) {Gated Fusion};
+    \node[circle, draw, very thick, fill=white, minimum size=0.6cm] (fuse) at (1.5, -0.2) {$\oplus$};
+    \draw[arrow] (gs.south) -- ++(0,-0.4) -| (fuse.north);
+    \draw[arrow] (gr.south) -- ++(0,-0.4) -| (fuse.north);
+    \draw[arrow] (fuse.south) -- ++(0,-0.6) node[below, font=\bfseries, module, fill=blue!5, draw=blue!70!black] {$H_G$ (Graph-Enhanced State)};
+    \node[anchor=west, align=left] at (1.8, -0.2) {Learnable\\Gated Fusion};
 \end{tikzpicture}
 \caption{Detailed architecture of R-STMF. Latent patch sequences are decomposed into seasonal and trend manifolds, which independently undergo distance-masked graph convolution prior to gated fusion.}
 \label{fig:rstmf_detail}
@@ -177,37 +177,36 @@ We refer to this module as K-AMC, short for KAN-enhanced Adaptive Modulation and
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.3cm, 
-    y=1.3cm,
-    module/.style={draw, rounded corners=3pt, very thick, align=center},
-    input/.style={module, fill=blue!6, draw=blue!60!black, minimum width=2cm, minimum height=0.6cm},
-    kan/.style={module, fill=teal!7, draw=teal!60!black, minimum width=2.8cm, minimum height=1.6cm},
-    cond/.style={module, fill=violet!8, draw=violet!60!black, minimum width=1.0cm, minimum height=0.5cm},
-    arrow/.style={->, line width=0.8pt, draw=black!75},
+    x=1.4cm, y=1.4cm,
+    module/.style={draw=black!80, rounded corners=3pt, very thick, align=center},
+    input/.style={module, fill=blue!5, draw=blue!70!black, minimum width=2.2cm, minimum height=0.6cm},
+    kan/.style={module, fill=teal!5, draw=teal!70!black, minimum width=3.0cm, minimum height=1.6cm},
+    cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=1.1cm, minimum height=0.5cm},
+    arrow/.style={->, line width=0.9pt, draw=black!75},
     note/.style={font=\tiny, align=center}
 ]
     % Left side: Parameter generation
-    \node[input] (ef) at (0, 3.8) {Future ExG $\mathbf{E}^f$};
-    \draw[arrow] (ef.south) -- ++(0,-0.5) node[midway, right, note] {Temporal Align};
+    \node[input] (ef) at (0, 3.8) {\textbf{Future ExG} $\mathbf{E}^f$};
+    \draw[arrow] (ef.south) -- ++(0,-0.5) node[midway, right] {Temporal Align};
     
-    \node[kan] (kanbox) at (0, 2.2) {};
-    \node[anchor=north, font=\bfseries\small] at (0, 3.0) {KAN Block};
-    \fill (-0.7, 2.5) circle (1.5pt); \fill (0.7, 2.5) circle (1.5pt); \fill (0, 1.7) circle (1.5pt);
-    \draw[violet, ->, line width=1.1pt] (-0.7, 2.5) .. controls (-0.6, 2.1) and (-0.2, 1.9) .. (0, 1.7) node[midway, left, note] {$\phi(x)$};
-    \draw[violet, ->, line width=1.1pt] (0.7, 2.5) .. controls (0.6, 2.1) and (0.2, 1.9) .. (0, 1.7);
+    \node[kan] (kanbox) at (0, 2.1) {};
+    \node[anchor=north, font=\bfseries] at (0, 2.85) {KAN Block};
+    \fill (-0.8, 2.3) circle (1.5pt); \fill (0.8, 2.3) circle (1.5pt); \fill (0, 1.6) circle (1.5pt);
+    \draw[violet!80!black, ->, line width=1.2pt] (-0.8, 2.3) .. controls (-0.7, 1.8) and (-0.2, 1.7) .. (-0.05, 1.65) node[midway, left] {$\phi(x)$};
+    \draw[violet!80!black, ->, line width=1.2pt] (0.8, 2.3) .. controls (0.7, 1.8) and (0.2, 1.7) .. (0.05, 1.65);
 
-    \node[cond] (gamma) at (-0.7, 0.6) {$\gamma$};
-    \node[cond] (beta) at (0.7, 0.6) {$\beta$};
-    \draw[line width=1pt, draw=black!75] (0, 1.4) -- (0, 1.1);
-    \draw[arrow] (0, 1.1) -| (gamma.north);
-    \draw[arrow] (0, 1.1) -| (beta.north);
+    \node[cond] (gamma) at (-0.8, 0.5) {\Large $\gamma$};
+    \node[cond] (beta) at (0.8, 0.5) {\Large $\beta$};
+    \draw[line width=1pt, draw=black!75] (0, 1.3) -- (0, 0.9);
+    \draw[arrow] (0, 0.9) -| (gamma.north);
+    \draw[arrow] (0, 0.9) -| (beta.north);
 
     % Right side: Main modulation flow
-    \node[module, fill=white, minimum width=1.5cm, minimum height=0.5cm] (hg) at (3.2, 3.8) {$H_G$};
-    \node[draw, circle, thick, fill=white, minimum size=5.5mm, inner sep=0pt] (mul) at (3.2, 2.7) {$\otimes$};
-    \node[draw, circle, thick, fill=white, minimum size=5.5mm, inner sep=0pt] (add1) at (3.2, 1.6) {$\oplus$};
-    \node[draw, circle, thick, fill=white, minimum size=5.5mm, inner sep=0pt] (add2) at (3.2, 0.5) {$\oplus$};
-    \node[module, fill=blue!6, draw=blue!60!black, minimum width=2.4cm, minimum height=0.6cm] (hf) at (3.2, -0.6) {\textbf{Conditioned State} $H_F$};
+    \node[module, fill=gray!5, minimum width=1.8cm, minimum height=0.6cm] (hg) at (3.5, 3.8) {\textbf{$H_G$}};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (mul) at (3.5, 2.6) {\Large $\otimes$};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add1) at (3.5, 1.4) {\Large $\oplus$};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add2) at (3.5, 0.2) {\Large $\oplus$};
+    \node[module, fill=blue!8, draw=blue!70!black, minimum width=2.8cm, minimum height=0.7cm] (hf) at (3.5, -1.0) {\textbf{Conditioned State} $H_F$};
 
     \draw[arrow] (hg.south) -- (mul.north);
     \draw[arrow] (mul.south) -- (add1.north);
@@ -215,12 +214,12 @@ We refer to this module as K-AMC, short for KAN-enhanced Adaptive Modulation and
     \draw[arrow] (add2.south) -- (hf.north);
 
     % Routing parameters to operators
-    \draw[arrow] (gamma.east) -- ++(1.8, 0) |- (mul.west);
-    \draw[arrow] (beta.east) -- ++(0.5, 0) |- (add1.west);
+    \draw[arrow] (gamma.east) -- ++(2.0, 0) |- (mul.west) node[pos=0.8, above, font=\scriptsize] {Scale};
+    \draw[arrow] (beta.east) -- ++(0.4, 0) |- (add1.west) node[pos=0.8, above, font=\scriptsize] {Shift};
     
     % Residual path
-    \draw[arrow] (hg.east) -- ++(0.6, 0) |- (add2.east);
-    \node[note, anchor=west] at (3.9, 2.0) {Residual Scaling\\$\times 0.1$};
+    \draw[arrow] (hg.east) -- ++(0.7, 0) |- (add2.east);
+    \node[align=left, anchor=west] at (4.3, 2.0) {Residual Scaling\\$\times 0.1$};
 \end{tikzpicture}
 \caption{Mechanics of K-AMC. Future exogenous drivers are aligned and processed through a KAN block to produce dynamic scale and shift parameters, which then non-linearly modulate the graph-enhanced latent state.}
 \label{fig:kamc_detail}
