@@ -12,13 +12,19 @@ This section reviews representative research trajectories pertinent to PhyST-Net
 \toprule
 \textbf{Model} & \textbf{Paradigm} & \textbf{Temporal Tokenization} & \textbf{Spatial Interaction} & \textbf{Exogenous Integration} & \textbf{Constraint Awareness} \\
 \midrule
-Autoformer / FEDformer & Transformer & Point-wise / Decomposition & None (Single-node) & Feature Concatenation & None \\
-PatchTST / iTransformer & Transformer & Rigid Patches / Inverted & None (Single-node) & None / Covariate Tokens & None \\
-STGCN / Graph WaveNet & ST-GNN & Convolutional / Recurrent & Homogeneous Graph Conv & Feature Concatenation & None \\
-SDG / SDG-Net & ST-GNN & Convolutional & Latent Dynamic Graph & None & None \\
-TimeXer / ConFormer & Hybrid & Rigid Patches & None / Cross-Attention & Variate Tokens (Cross-Attn) & None \\
-GCGNet / ExoST & ST-GNN & Convolutional & Generative Graph Alignment & Joint Temporal-Channel & None \\
-GeatFormer / PGNN-TFT & Physics-Inf. & Rigid Patches & Static Graph & None & Penalty / Post-hoc Clip \\
+Informer \cite{zhou2021informer} & Transformer & Point-wise (ProbSparse) & None (Single-node) & Feature Concatenation & None \\
+Autoformer \cite{wu2021autoformer} & Transformer & Series Decomposition & None (Single-node) & Feature Concatenation & None \\
+PatchTST \cite{nie2023patchtst} & Transformer & Rigid Temporal Patches & None (Single-node) & None & None \\
+iTransformer \cite{liu2024itransformer} & Transformer & Inverted Dimension & None (Single-node) & Covariate Tokens & None \\
+STGCN \cite{yu2017spatio} & ST-GNN & Convolutional (Gated) & Static Graph Conv & Feature Concatenation & None \\
+Graph WaveNet \cite{wu2019graph} & ST-GNN & Dilated Causal Conv & Adaptive Graph Conv & Feature Concatenation & None \\
+SDG-Net \cite{li2024sdg} & ST-GNN & Convolutional & Latent Dual-Graph & None & None \\
+TimeXer \cite{wang2024timexer} & Hybrid & Rigid Patches & Global Token / Cross-Attn & Variate Tokens (Cross-Attn) & None \\
+ConFormer \cite{conformer2025} & Hybrid & Transformer Encoder & Cross-Attention & External Event Embedding & None \\
+GCGNet \cite{gcgnet2026} & ST-GNN & Generative / Recurrent & Consistent Alignment & Joint Temporal-Channel & None \\
+ExoST \cite{exost2025} & ST-GNN & Convolutional & ExG-driven Graph & Select-then-Balance & None \\
+GeatFormer \cite{liu2026geatformer} & Physics-Inf. & Rigid Patches & Dual-branch Graph & None & Penalty Loss \\
+PGNN-TFT \cite{PGNNTFT2025} & Physics-Inf. & Transformer (TFT) & Static Domain Graph & None & Post-hoc Clipping \\
 \midrule
 \textbf{PhyST-Net (Ours)} & \textbf{Hybrid} & \textbf{Continuous Gaussian (AGSP)} & \textbf{Decoupled Manifold (R-STMF)} & \textbf{KAN Conditioning (K-AMC)} & \textbf{Diff. Head (PI-DCH)} \\
 \bottomrule

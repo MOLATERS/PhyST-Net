@@ -224,12 +224,12 @@ PI-DCH circumvents this by systematically steering latent predictions toward a d
 \end{equation}
 Crucially, during the training phase, this differentiable soft-capped tensor $\hat{Y}_{soft}$ is utilized to compute the forecasting loss ($\mathcal{L}_{mae}$) and the penalty ($\mathcal{L}_{penalty}$). This guarantees that gradients backpropagate natively through the constraint-shaping logic, mitigating the train-inference mismatch of naive clipping. 
 
-The definitive feasible forecast $\hat{\mathbf{Y}}$ is subsequently derived via a non-linear hard projection:
+To ensure that the model remains physically consistent even under extreme scenarios, we adopt a dual-stage enforcement strategy. While $\hat{Y}_{soft}$ provides the differentiable path necessary for optimization, we define the final deployment-ready forecast $\hat{\mathbf{Y}}$ through a \textbf{Strict Operational Boundary Enforcement} layer:
 \begin{equation}
-\hat{\mathbf{Y}}=\operatorname{clip}(\hat{Y}_{soft},0,C_{dyn}).
-\label{eq:pidch_clip}
+\hat{\mathbf{Y}} = \operatorname{Proj}_{\mathcal{K}}(\hat{Y}_{soft}) \triangleq \max(0, \min(\hat{Y}_{soft}, C_{dyn})),
+\label{eq:pidch_enforcement}
 \end{equation}
-This physics-informed projection is stringently enforced during inference, enforcing bounded feasibility with respect to the specified envelope.
+where $\operatorname{Proj}_{\mathcal{K}}$ denotes the Euclidean projection onto the dynamic feasible set $\mathcal{K} = [0, C_{dyn}]$. Crucially, this projection is treated as a non-trainable safety layer during inference to guarantee 100\% compliance with physical limits. By decoupling the differentiable steering ($\hat{Y}_{soft}$) from the strict enforcement ($\hat{\mathbf{Y}}$), PhyST-Net achieves the dual goals of stable gradient backpropagation and absolute operational feasibility.
 
 \subsection{Computational Complexity Analysis}
 \label{sec:complexity_analysis}
