@@ -50,83 +50,80 @@ where $\Phi_{patch}$ is AGSP, $\Phi_{temp}$ is the temporal Transformer encoder,
 \draw[panel] (7.45,0) rectangle (14.55,4.0);
 
 \node[title, anchor=west] at (0.18,3.72) {(a) AGSP Detail};
-\node[title, anchor=west] at (7.63,3.82) {(b) K-AMC Detail};
+\node[title, anchor=west] at (7.63,3.72) {(b) K-AMC Detail};
 
 % --- (a) AGSP Detail ---
-\begin{scope}[shift={(0.35,0.45)}]
-    \node[anchor=west, font=\small] at (0.0,2.70) {Rigid Hard Patches};
-    \draw[axis] (0.0,0.55) -- (3.0,0.55) node[right] {$t$};
-    \draw[signal] plot[domain=0.15:2.85, samples=80]
-        (\x,{1.05 + 0.18*sin(deg(4.0*\x)) + 0.06*sin(deg(15.0*\x))});
-    \draw[blue!70!black, hard] (0.50,0.55) rectangle (1.15,1.78);
-    \draw[orange!85!black, hard] (1.15,0.55) rectangle (1.85,1.78);
-    \draw[green!60!black, hard] (1.85,0.55) rectangle (2.50,1.78);
-    \draw[warn] (1.15,1.88) -- (0.95,2.20)
-        node[above, note, text=red!75!black] {Boundary\\Artifacts};
-    \draw[warn] (1.85,1.88) -- (2.05,2.20);
+\begin{scope}[shift={(0.3,0.2)}]
+    \node[anchor=west, font=\bfseries] at (0.0, 3.2) {Rigid Hard Patches};
+    \draw[axis] (0.0, 0.8) -- (3.0, 0.8) node[right] {$t$};
+    \draw[signal] plot[domain=0.15:2.85, samples=80] (\x,{1.3 + 0.2*sin(deg(4.0*\x)) + 0.08*sin(deg(15.0*\x))});
+    
+    \draw[blue!70!black, hard] (0.50, 0.8) rectangle (1.15, 2.2);
+    \draw[orange!85!black, hard] (1.15, 0.8) rectangle (1.85, 2.2);
+    \draw[green!60!black, hard] (1.85, 0.8) rectangle (2.50, 2.2);
+    
+    \node[note, text=red!75!black, align=center] (warnnode) at (1.5, 2.8) {Boundary\\Artifacts};
+    \draw[warn] (warnnode.south west) -- (1.15, 2.25);
+    \draw[warn] (warnnode.south east) -- (1.85, 2.25);
 \end{scope}
 
-\begin{scope}[shift={(3.85,0.45)}]
-    \node[anchor=west, font=\small] at (0.0,2.70) {Soft Overlapping Gaussians};
-    \draw[axis] (0.0,0.55) -- (3.0,0.55) node[right] {$t$};
-    \draw[signal] plot[domain=0.15:2.85, samples=80]
-        (\x,{1.05 + 0.18*sin(deg(4.0*\x)) + 0.06*sin(deg(15.0*\x))});
+\begin{scope}[shift={(3.8,0.2)}]
+    \node[anchor=west, font=\bfseries] at (0.0, 3.2) {Soft Overlapping Gaussians};
+    \draw[axis] (0.0, 0.8) -- (3.0, 0.8) node[right] {$t$};
+    \draw[signal] plot[domain=0.15:2.85, samples=80] (\x,{1.3 + 0.2*sin(deg(4.0*\x)) + 0.08*sin(deg(15.0*\x))});
 
     \path[fill=blue!20, draw=blue!70!black, soft]
-        (0.20,0.55)
-        plot[domain=0.20:1.45, samples=70]
-        (\x,{0.55 + 1.05*exp(-((\x-0.80)^2)/0.11)})
-        -- (1.45,0.55) -- cycle;
+        (0.15, 0.8) plot[domain=0.15:1.45, samples=70] (\x,{0.8 + 1.2*exp(-((\x-0.80)^2)/0.11)}) -- (1.45, 0.8) -- cycle;
     \path[fill=orange!22, draw=orange!85!black, soft]
-        (0.85,0.55)
-        plot[domain=0.85:2.05, samples=70]
-        (\x,{0.55 + 0.95*exp(-((\x-1.45)^2)/0.09)})
-        -- (2.05,0.55) -- cycle;
+        (0.85, 0.8) plot[domain=0.85:2.05, samples=70] (\x,{0.8 + 1.1*exp(-((\x-1.45)^2)/0.09)}) -- (2.05, 0.8) -- cycle;
     \path[fill=green!18, draw=green!60!black, soft]
-        (1.55,0.55)
-        plot[domain=1.55:2.85, samples=70]
-        (\x,{0.55 + 1.10*exp(-((\x-2.18)^2)/0.12)})
-        -- (2.85,0.55) -- cycle;
+        (1.45, 0.8) plot[domain=1.45:2.85, samples=70] (\x,{0.8 + 1.3*exp(-((\x-2.15)^2)/0.12)}) -- (2.85, 0.8) -- cycle;
 \end{scope}
 
 % --- (b) K-AMC Detail ---
-\begin{scope}[shift={(7.78,0.38)}]
-    \node[input] (ef) at (1.00,2.92) {Future ExG\\$\mathbf{E}^f$};
-    \draw[arrow] (1.00,2.58) -- (1.00,2.27) node[midway, right, note] {AvgPool1d};
+\begin{scope}[shift={(7.5,0)}]
+    % Input E^f
+    \node[input, text width=2.0cm, minimum height=0.5cm] (ef) at (1.5, 3.4) {Future ExG $\mathbf{E}^f$};
+    \draw[arrow] (1.5, 3.15) -- (1.5, 2.8) node[midway, right, note] {AvgPool1d};
 
-    \node[kan, minimum height=1.45cm] (kanbox) at (1.00,1.45) {};
-    \node[anchor=north, font=\bfseries] at (1.00,2.04) {KAN Block};
-    \fill (0.57,1.74) circle (1.25pt);
-    \fill (1.43,1.74) circle (1.25pt);
-    \fill (1.00,1.13) circle (1.25pt);
+    % KAN Block
+    \node[kan, minimum height=1.3cm, minimum width=2.4cm] (kanbox) at (1.5, 2.15) {};
+    \node[anchor=north, font=\bfseries, note] at (1.5, 2.75) {KAN Block};
+    \fill (0.9, 2.35) circle (1.25pt);
+    \fill (2.1, 2.35) circle (1.25pt);
+    \fill (1.5, 1.75) circle (1.25pt);
     \draw[violet!80!black, ->, thick]
-        (0.57,1.74) .. controls (0.38,1.52) and (0.72,1.28) .. (1.00,1.13)
+        (0.9, 2.35) .. controls (0.7, 2.05) and (1.2, 1.85) .. (1.5, 1.75)
         node[midway, left, note] {$\phi(x)$};
     \draw[violet!80!black, ->, thick]
-        (1.43,1.74) .. controls (1.62,1.52) and (1.28,1.28) .. (1.00,1.13);
+        (2.1, 2.35) .. controls (2.3, 2.05) and (1.8, 1.85) .. (1.5, 1.75);
 
-    \node[cond] (gamma) at (0.55,0.42) {$\gamma$};
-    \node[cond] (beta) at (1.45,0.42) {$\beta$};
-    \draw[arrow] (kanbox.south) -- ++(0,-0.18) -| (gamma.north);
-    \draw[arrow] (kanbox.south) -- ++(0,-0.18) -| (beta.north);
+    % Gamma and Beta
+    \node[cond, text width=0.8cm, minimum height=0.45cm] (gamma) at (0.8, 0.8) {$\gamma$};
+    \node[cond, text width=0.8cm, minimum height=0.45cm] (beta) at (2.2, 0.8) {$\beta$};
+    \draw[arrow] (kanbox.south) -- ++(0,-0.2) -| (gamma.north);
+    \draw[arrow] (kanbox.south) -- ++(0,-0.2) -| (beta.north);
 
-    \node[draw, rounded corners=3pt, very thick, fill=white, minimum height=0.56cm,
-          minimum width=1.75cm, align=center] (hg) at (4.10,2.05) {$H_G$};
-    \node[draw, circle, thick, fill=white, minimum size=5.2mm, inner sep=0pt] (mul) at (3.05,2.05) {$\otimes$};
-    \node[draw, circle, thick, fill=white, minimum size=5.2mm, inner sep=0pt] (add1) at (3.05,1.30) {$\oplus$};
-    \node[draw, circle, thick, fill=white, minimum size=5.2mm, inner sep=0pt] (add2) at (3.05,0.58) {$\oplus$};
+    % Main flow nodes
+    \node[draw, rounded corners=3pt, very thick, fill=white, minimum height=0.5cm,
+          minimum width=2.0cm, align=center] (hg) at (5.0, 3.4) {$H_G$};
+    \node[draw, circle, thick, fill=white, minimum size=5.0mm, inner sep=0pt] (mul) at (5.0, 2.4) {$\otimes$};
+    \node[draw, circle, thick, fill=white, minimum size=5.0mm, inner sep=0pt] (add1) at (5.0, 1.6) {$\oplus$};
+    \node[draw, circle, thick, fill=white, minimum size=5.0mm, inner sep=0pt] (add2) at (5.0, 0.8) {$\oplus$};
     \node[draw, rounded corners=3pt, very thick, fill=blue!6, draw=blue!60!black,
-          minimum width=2.10cm, minimum height=0.56cm, align=center] (hf) at (4.10,0.58)
-          {\textbf{Conditioned State}\\$H_F$};
+          minimum width=2.4cm, minimum height=0.5cm, align=center] (hf) at (5.0, 0.2)
+          {\textbf{Conditioned State} $H_F$};
 
-    \draw[arrow] (hg.west) -- (mul.east);
-    \draw[arrow] (gamma.east) -| (mul.south);
+    % Connections
+    \draw[arrow] (hg.south) -- (mul.north);
+    \draw[arrow] (gamma.east) -- ++(0.3,0) |- (mul.west);
     \draw[arrow] (mul.south) -- (add1.north);
-    \draw[arrow] (beta.east) -- ++(0.50,0) |- (add1.west);
+    \draw[arrow] (beta.east) -- ++(0.3,0) |- (add1.west);
     \draw[arrow] (add1.south) -- (add2.north);
-    \draw[arrow] (hg.east) -- ++(0.45,0) |- (add2.east);
-    \draw[arrow] (add2.east) -- (hf.west);
-    \node[note, anchor=west] at (3.35,1.18) {Residual scaling $\times 0.1$};
+    \draw[arrow] (add2.south) -- (hf.north);
+    
+    % Residual
+    \draw[arrow] (hg.east) -- ++(0.4,0) |- (add2.east) node[pos=0.25, right, note] {Residual $\times 0.1$};
 \end{scope}
 \end{tikzpicture}
 \caption{Internal mechanics of the coupled modules. (a) AGSP replaces discrete sequence chunking with continuous, differentiable density windows, reducing boundary artifacts. (b) K-AMC leverages Kolmogorov-Arnold Networks (KAN) to map future exogenous features into dynamic scale ($\gamma$) and shift ($\beta$) parameters for conditional modulation.}
