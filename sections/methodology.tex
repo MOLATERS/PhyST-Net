@@ -169,7 +169,7 @@ H_{R} &= H_T - H_{S}. \label{eq:rstmf_decomp_r}
 \end{align}
 This decomposition ensures that the model can independently learn how macro-scale trends and micro-scale seasonal fluctuations propagate through the graph.
 
-\subsubsection{Distance-Masked Relational Pruning}
+\subsubsection*{Distance-Masked Relational Pruning}
 For each manifold $c \in \{S, R\}$, we compute relational attention scores across nodes. To enforce physical realism and reduce computational overhead, we introduce a **Distance-Masked Top-$K$ Pruning** strategy. Given a physical distance matrix or prior topology, we define a binary mask $\mathcal{M}_{dist}$, where $\mathcal{M}_{ij}=1$ only if node $j$ is within a feasible interaction radius of node $i$. The masked attention score $S_c$ is:
 \begin{equation}
 S_{c,ij} = \begin{cases} \frac{Q_c(K_c)^{\top}}{\sqrt{d_m}} & \text{if } \mathcal{M}_{ij}=1 \\ -\infty & \text{otherwise} \end{cases}.
