@@ -8,12 +8,13 @@
 main.*
 main.pdf
 
-# Output and zip should be tracked
-output/*.pdf
+# Output (all contents ignored)
+output/
+
+# Other
 *.zip
 reference_pdfs/
 .venv/
-
 main.fdb_latexmk
 main.fls
 main.out
