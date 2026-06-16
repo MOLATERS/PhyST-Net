@@ -158,8 +158,9 @@ H_T=\operatorname{STEnc}([Z \parallel z_{global}]), \quad H_T\in\mathbb{R}^{B\ti
 Crucially, rather than discarding the global token post-encoding, PhyST-Net structurally leverages it to separate the node's state into two distinct manifolds: a local-variation patch state $U \triangleq H_{T,1:P}$ and a macro-trend global state $R \triangleq H_{T,P+1}$.
 
 \subsection{Relational Spatio-Temporal Manifold Fusion (R-STMF)}
+
 \label{sec:rstmf}
-R-STMF serves as the graph adapter, specifically designed to capture the multi-modal spatial dependencies inherent in physical networks. Unlike conventional graph operators that treat node features as monolithic vectors, R-STMF recognizes that spatial interactions occur across different temporal scales within the latent space. To address this, we perform a **Latent Patch Manifold Decomposition** on the temporal representation $H_T \in \mathbb{R}^{B \times N \times P \times d}$.
+R-STMF serves as the graph adapter, specifically designed to capture the multi-modal spatial dependencies inherent in physical networks. Unlike conventional graph operators that treat node features as monolithic vectors, R-STMF recognizes that spatial interactions occur across different temporal scales within the latent space. To address this, we perform a Latent Patch Manifold Decomposition on the temporal representation $H_T \in \mathbb{R}^{B \times N \times P \times d}$.
 
 Specifically, for each node $n$, we treat the sequence of $P$ latent patches as a low-resolution temporal manifold. We apply a 1D depth-wise convolution along the patch dimension to extract the seasonal (periodic/oscillatory) component $H_{S}$, while the residual represents the trend (drifting/low-frequency) component $H_{R}$:
 \begin{align}

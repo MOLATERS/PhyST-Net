@@ -16,4 +16,4 @@ reference_pdfs/
 
 main.fdb_latexmk
 main.fls
-output/PhyST-Net_Latest_Draft.pdf
+main.out
