@@ -5,6 +5,7 @@
 *.blg
 *.bbl
 *.synctex.gz
+main.*
 main.pdf
 
 # Output and zip should be tracked
