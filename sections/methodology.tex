@@ -220,70 +220,167 @@ We refer to this module as K-AMC, short for KAN-enhanced Adaptive Modulation and
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.5cm, y=1.3cm,
-    module/.style={draw=black!80, rounded corners=3pt, very thick, align=center},
-    input/.style={module, fill=blue!5, draw=blue!70!black, minimum width=2.4cm, minimum height=0.6cm},
-    kan/.style={module, fill=teal!5, draw=teal!70!black, minimum width=2.2cm, minimum height=1.6cm},
-    cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=1.1cm, minimum height=0.5cm},
-    arrow/.style={->, line width=0.9pt, draw=black!75},
-    note/.style={font=\tiny, align=center}
+    x=1.25cm, y=1.05cm,
+    module/.style={
+        draw=black!75,
+        rounded corners=3pt,
+        very thick,
+        align=center,
+        fill=white,
+        inner sep=3pt
+    },
+    input/.style={
+        module,
+        fill=blue!5,
+        draw=blue!75!black,
+        minimum width=2.35cm,
+        minimum height=0.56cm
+    },
+    alignblk/.style={
+        module,
+        fill=gray!5,
+        draw=black!70,
+        minimum width=2.35cm,
+        minimum height=0.62cm
+    },
+    kanblk/.style={
+        module,
+        fill=teal!5,
+        draw=teal!70!black,
+        minimum width=2.35cm,
+        minimum height=1.55cm
+    },
+    cond/.style={
+        module,
+        fill=violet!5,
+        draw=violet!75!black,
+        minimum width=0.82cm,
+        minimum height=0.45cm
+    },
+    op/.style={
+        circle,
+        draw=black!80,
+        thick,
+        fill=white,
+        minimum size=6.3mm,
+        inner sep=0pt
+    },
+    blend/.style={
+        module,
+        fill=orange!5,
+        draw=orange!85!black,
+        dashed,
+        minimum width=3.25cm,
+        minimum height=1.05cm
+    },
+    arrow/.style={
+        ->,
+        line width=0.9pt,
+        draw=black!75
+    },
+    condarrow/.style={
+        ->,
+        line width=0.85pt,
+        draw=black!65
+    },
+    residual/.style={
+        ->,
+        line width=1.0pt,
+        draw=gray!75
+    },
+    note/.style={
+        font=\tiny,
+        align=center,
+        text=black!75
+    }
 ]
-    % Left column: Parameter generation (Shifted to x=0.6 to prevent cropping)
-    \begin{scope}[shift={(0.6, 0)}]
-        \node[input] (ef) at (0, 4.4) {\textbf{Future ExG} $\mathbf{E}^f$};
-        \node[module, fill=gray!5, minimum width=2.4cm, minimum height=0.6cm] (align) at (0, 3.3) {Alignment $\Gamma$\\ \tiny (AvgPool1d to patches)};
-        \draw[arrow] (ef.south) -- (align.north);
-        
-        \node[kan] (kanbox) at (0, 1.6) {};
-        \node[anchor=north, font=\bfseries] at (0, 2.35) {KAN Block};
-        
-        % Bipartite Graph inside KAN
-        \fill (-0.6, 1.8) circle (1.5pt); \fill (0.6, 1.8) circle (1.5pt);
-        \fill (-0.6, 1.1) circle (1.5pt); \fill (0.6, 1.1) circle (1.5pt);
-        \draw[violet!80!black, ->, line width=1.0pt] (-0.6, 1.8) -- (-0.6, 1.1);
-        \draw[violet!80!black, ->, line width=1.0pt] (-0.6, 1.8) .. controls (-0.1, 1.6) and (0.1, 1.3) .. (0.6, 1.1) node[pos=0.65, above, sloped, inner sep=1pt] {\tiny $\phi(x)$};
-        \draw[violet!80!black, ->, line width=1.0pt] (0.6, 1.8) -- (-0.6, 1.1);
-        \draw[violet!80!black, ->, line width=1.0pt] (0.6, 1.8) -- (0.6, 1.1);
-        
-        \draw[arrow] (align.south) -- (0, 2.4);
 
-        \node[cond] (gamma) at (-0.6, -0.2) {\Large $\gamma$};
-        \node[cond] (beta) at (0.6, -0.2) {\Large $\beta$};
-        \draw[line width=1.2pt, draw=black!75] (0, 0.8) -- (0, 0.3);
-        \draw[arrow] (0, 0.3) -| (gamma.north);
-        \draw[arrow] (0, 0.3) -| (beta.north);
-    \end{scope}
+% Fixed bounding box to avoid cropping
+\path[use as bounding box] (-1.35,-3.05) rectangle (6.25,4.95);
 
-    % Right side: Main modulation flow
-    \begin{scope}[shift={(4.2, 0)}]
-        \node[input, fill=gray!10, draw=gray!80!black] (hg) at (0, 4.4) {\textbf{$H_G$}};
-        \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (mul) at (0, 3.2) {\Large $\otimes$};
-        \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add1) at (0, 2.0) {\Large $\oplus$};
-        \node[module, fill=yellow!10, draw=orange!80!black, minimum width=1.8cm, minimum height=0.6cm] (hmod) at (0, 0.8) {\textbf{$H_{\text{mod}}$}};
+% =========================================================
+% Left column: Future-ExG parameter generation
+% =========================================================
+\node[input] (ef) at (0,4.35) {\textbf{Future ExG} $\mathbf{E}^{f}$};
 
-        % Convex Blending Block
-        \node[module, fill=orange!5, draw=orange!80!black, dashed, minimum width=3.5cm, minimum height=1.5cm] (blend) at (0, -1.0) {};
-        \node[anchor=north, font=\bfseries] at (0, -0.3) {Convex Blend ($\alpha=0.1$)};
-        \node[font=\bfseries] at (0, -1.0) {$H_F = (1-\alpha)H_G + \alpha H_{\text{mod}}$};
-        
-        \node[input] (hf) at (0, -2.4) {\textbf{ExG-conditioned State} $H_F$};
+\node[alignblk] (align) at (0,3.25)
+{Alignment $\Gamma$\\[-1pt]
+{\tiny AvgPool1d to $P$ patches}};
 
-        % Main vertical path
-        \draw[arrow] (hg.south) -- (mul.north);
-        \draw[arrow] (mul.south) -- (add1.north);
-        \draw[arrow] (add1.south) -- (hmod.north);
-        \draw[arrow] (hmod.south) -- (blend.north);
-        \draw[arrow] (blend.south) -- (hf.north);
+\node[kanblk] (kan) at (0,1.65) {};
 
-        % Routing parameters to operators
-        \draw[arrow] (0.0, -0.2) -- ++(3.2, 0) |- (mul.west) node[pos=0.8, above, font=\scriptsize] {Scale};
-        \draw[arrow] (1.2, -0.2) -- ++(2.0, 0) |- (add1.west) node[pos=0.8, above, font=\scriptsize] {Shift};
-        
-        % Residual Path to Blend
-        \draw[arrow, draw=gray!80, line width=1.2pt] (hg.east) -- ++(1.4, 0) |- (blend.east) node[pos=0.25, right, align=left, text=black] {Residual\\$H_G$};
-    \end{scope}
+\node[font=\bfseries] at (0,2.27) {KAN Block};
+\node[note] at (0,2.02) {spline edge functions};
+
+% KAN internal bipartite graph
+\coordinate (u1) at (-0.62,1.72);
+\coordinate (u2) at ( 0.62,1.72);
+\coordinate (v1) at (-0.62,1.17);
+\coordinate (v2) at ( 0.62,1.17);
+
+\fill[violet!90!black] (u1) circle (1.35pt);
+\fill[violet!90!black] (u2) circle (1.35pt);
+\fill[violet!90!black] (v1) circle (1.35pt);
+\fill[violet!90!black] (v2) circle (1.35pt);
+
+\draw[violet!80!black, line width=0.9pt] (u1) -- (v1);
+\draw[violet!80!black, line width=0.9pt] (u2) -- (v2);
+\draw[violet!80!black, line width=0.9pt] (u1) .. controls (-0.15,1.63) and (0.25,1.30) .. (v2);
+\draw[violet!80!black, line width=0.9pt] (u2) .. controls (0.15,1.63) and (-0.25,1.30) .. (v1);
+
+\node[violet!80!black, font=\tiny, fill=teal!5, inner sep=1pt] at (0,1.48) {$\phi(x)$};
+
+\node[cond] (gamma) at (-0.55,0.30) {\Large $\gamma$};
+\node[cond] (beta)  at ( 0.55,0.30) {\Large $\beta$};
+
+\draw[arrow] (ef.south) -- (align.north);
+\draw[arrow] (align.south) -- (kan.north);
+\draw[arrow] (kan.south) -- (0,0.75);
+\draw[arrow] (0,0.75) -| (gamma.north);
+\draw[arrow] (0,0.75) -| (beta.north);
+
+% =========================================================
+% Right column: FiLM modulation and convex blending
+% =========================================================
+\node[input, fill=gray!8, draw=gray!80!black, minimum width=1.75cm] (hg) at (4.0,4.35)
+{\textbf{$H_G$}};
+
+\node[op] (mul) at (4.0,3.22) {\Large $\otimes$};
+\node[op] (add) at (4.0,2.10) {\Large $\oplus$};
+
+\node[module, fill=orange!8, draw=orange!85!black, minimum width=1.42cm, minimum height=0.52cm] (hmod) at (4.0,1.02)
+{\textbf{$H_{\mathrm{mod}}$}};
+
+\node[blend] (blend) at (4.0,-0.45)
+{\textbf{Convex Blend} $(\alpha=0.1)$\\[2pt]
+$H_F=(1-\alpha)H_G+\alpha H_{\mathrm{mod}}$};
+
+\node[input, minimum width=2.85cm] (hf) at (4.0,-2.00)
+{\textbf{ExG-conditioned State} $H_F$};
+
+% Main vertical flow
+\draw[arrow] (hg.south) -- (mul.north);
+\draw[arrow] (mul.south) -- (add.north);
+\draw[arrow] (add.south) -- (hmod.north);
+\draw[arrow] (hmod.south) -- (blend.north);
+\draw[arrow] (blend.south) -- (hf.north);
+
+% Independent gamma/beta parameter routes
+\draw[condarrow] (gamma.east) -- ++(0.80,0) |- (mul.west)
+    node[pos=0.83, above, font=\tiny] {scale};
+
+\draw[condarrow] (beta.east) -- ++(0.60,0) |- (add.west)
+    node[pos=0.83, above, font=\tiny] {shift};
+
+% Residual H_G route to convex blend
+\draw[residual] (hg.east) -- ++(0.85,0) |- (blend.east)
+    node[pos=0.24, right, font=\tiny, align=left, text=black!70] {residual\\$H_G$};
+
+% Small local formula near FiLM operators
+\node[note, anchor=west] at (4.38,2.68) {$H_{\mathrm{mod}}=\gamma\odot H_G+\beta$};
+
 \end{tikzpicture}
-\caption{Mechanics of K-AMC. Future exogenous drivers are aligned and processed through a KAN block (featuring learnable spline edge functions) to produce dynamic scale and shift parameters. The final conditioned state is derived via a stable convex blending mechanism.}
+\caption{Mechanics of K-AMC. Future exogenous drivers are aligned to the patch scale and processed through a KAN block with learnable spline edge functions to produce dynamic scale and shift parameters. The modulated state is combined with the original graph-enhanced state through a stable convex blending mechanism.}
 \label{fig:kamc_detail}
 \end{figure}
 
