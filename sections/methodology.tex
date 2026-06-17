@@ -124,72 +124,183 @@ H_{se} &= H_{in} - H_{tr}. \label{eq:rstmf_decomp_se}
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.35cm, y=1.25cm,
-    module/.style={draw=black!80, rounded corners=3pt, very thick, align=center, fill=white},
-    cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=1.5cm},
-    prop/.style={module, fill=teal!5, draw=teal!70!black, minimum width=1.8cm, minimum height=0.7cm},
-    arrow/.style={->, line width=1pt, draw=black!75},
-    note/.style={font=\tiny, align=center}
+    x=1.18cm, y=1.05cm,
+    module/.style={
+        draw=black!80,
+        rounded corners=3pt,
+        very thick,
+        align=center,
+        fill=white,
+        inner sep=3pt
+    },
+    cond/.style={
+        module,
+        fill=violet!5,
+        draw=violet!70!black,
+        minimum width=1.50cm,
+        minimum height=0.48cm
+    },
+    prop/.style={
+        module,
+        fill=teal!5,
+        draw=teal!70!black,
+        minimum width=1.72cm,
+        minimum height=0.72cm
+    },
+    op/.style={
+        circle,
+        draw=black!80,
+        thick,
+        fill=white,
+        minimum size=6.0mm,
+        inner sep=0pt
+    },
+    arrow/.style={
+        ->,
+        line width=0.95pt,
+        draw=black!75
+    },
+    maskarrow/.style={
+        ->,
+        dashed,
+        line width=0.85pt,
+        draw=red!75!black
+    },
+    lab/.style={
+        font=\tiny,
+        fill=white,
+        inner sep=1.2pt,
+        text=black!80
+    },
+    title/.style={
+        font=\bfseries\scriptsize,
+        anchor=north west
+    }
 ]
-    % Background Boxes
-    \begin{pgfonlayer}{background}
-        \draw[fill=blue!3, draw=blue!20, rounded corners] (-0.3, 3.4) rectangle (5.3, 5.4);
-        \node[anchor=north west, font=\bfseries\scriptsize, text=blue!80!black] at (-0.3, 5.4) {1. Latent Patch Decomposition};
 
-        \draw[fill=orange!3, draw=orange!20, rounded corners] (-0.3, -0.6) rectangle (5.3, 2.6);
-        \node[anchor=north west, font=\bfseries\scriptsize, text=orange!80!black] at (-0.3, 2.6) {2. Branch-wise Distance-Masked Graph Interaction};
+% Fixed bounding box
+\path[use as bounding box] (-0.55,-3.75) rectangle (5.85,5.55);
 
-        \draw[fill=green!3, draw=green!20, rounded corners] (-0.3, -3.4) rectangle (5.3, -1.2);
-        \node[anchor=north west, font=\bfseries\scriptsize, text=green!80!black] at (-0.3, -1.2) {3. Learnable Gated Fusion};
-    \end{pgfonlayer}
+% =========================================================
+% Background blocks
+% =========================================================
+\begin{pgfonlayer}{background}
+    \draw[fill=blue!3, draw=blue!20, rounded corners]
+        (-0.35,3.35) rectangle (5.55,5.40);
+    \node[title, text=blue!80!black] at (-0.25,5.32)
+        {1. Latent Patch Decomposition};
 
-    % 1. Decomp
-    \node[module, fill=gray!5, minimum width=3.5cm, minimum height=0.5cm] (hin) at (2.5, 4.8) {\textbf{$H_{in}$} (Latent Representation)};
-    \node[module, fill=white, minimum width=1.5cm, minimum height=0.5cm] (conv) at (1.0, 3.8) {Conv1D\\+ GELU};
-    \node[draw, circle, thick, fill=white, minimum size=5.5mm, inner sep=0pt] (sub) at (4.0, 3.8) {\Large $-$};
-    \node[anchor=west, text=black!80] at (4.3, 3.8) {$H_{se} \!=\! H_{in} \!-\! H_{tr}$};
-    
-    \draw[arrow] (hin.south) -- (1.0, 4.4) -- (conv.north);
-    \draw[arrow] (hin.south) -- (4.0, 4.4) -- (sub.north);
-    \draw[arrow] (conv.east) -- (sub.west);
+    \draw[fill=orange!3, draw=orange!20, rounded corners]
+        (-0.35,-0.65) rectangle (5.55,2.65);
+    \node[title, text=orange!85!black] at (-0.25,2.55)
+        {2. Branch-wise Distance-Masked Graph Interaction};
 
-    \node[cond, minimum height=0.5cm] (htr) at (1.0, 2.0) {\textbf{Trend} $H_{tr}$};
-    \node[cond, minimum height=0.5cm] (hse) at (4.0, 2.0) {\textbf{Seasonal} $H_{se}$};
-    \draw[arrow] (conv.south) -- (htr.north);
-    \draw[arrow] (sub.south) -- (hse.north);
+    \draw[fill=green!3, draw=green!20, rounded corners]
+        (-0.35,-3.50) rectangle (5.55,-1.15);
+    \node[title, text=green!80!black] at (-0.25,-1.25)
+        {3. Learnable Gated Fusion};
+\end{pgfonlayer}
 
-    % 2. Graph Ops
-    \node[module, fill=red!5, draw=red!70!black, dashed, minimum width=4cm, minimum height=0.5cm] (mask) at (2.5, 1.1) {Distance Mask $\mathcal{M}_{dist}$ $\to$ Branch-specific Top-$K$};
-    \node[prop] (gctr) at (1.0, 0.0) {Masked Top-$K$\\Graph Prop.\\$\mathbf{A}_{tr}$};
-    \node[prop] (gcse) at (4.0, 0.0) {Masked Top-$K$\\Graph Prop.\\$\mathbf{A}_{se}$};
+% =========================================================
+% 1. Latent Patch Decomposition
+% =========================================================
+\node[module, fill=gray!5, minimum width=3.35cm, minimum height=0.50cm]
+    (hin) at (2.55,4.75)
+    {\textbf{$H_{in}$} (Latent Representation)};
 
-    \draw[arrow, dashed, draw=red!70!black] (mask.south) -- (1.0, 0.7) -- (gctr.north);
-    \draw[arrow, dashed, draw=red!70!black] (mask.south) -- (4.0, 0.7) -- (gcse.north);
-    
-    \draw[arrow] (htr.south) -- (gctr.north);
-    \draw[arrow] (hse.south) -- (gcse.north);
+\node[module, minimum width=1.35cm, minimum height=0.55cm]
+    (conv) at (1.05,3.78)
+    {Conv1D\\[-1pt] + GELU};
 
-    % 3. Fusion
-    \node[font=\bfseries] (hgtr) at (1.0, -0.8) {$H_{tr}^G$};
-    \node[font=\bfseries] (hgse) at (4.0, -0.8) {$H_{se}^G$};
-    \draw[arrow] (gctr.south) -- (hgtr.north);
-    \draw[arrow] (gcse.south) -- (hgse.north);
+\node[op] (sub) at (4.05,3.78) {\Large $-$};
 
-    \node[module, minimum width=2cm, minimum height=0.5cm] (gate) at (2.5, -1.8) {Gate $\sigma(\cdot)$};
-    \node[draw, circle, thick, fill=white, inner sep=1pt] (mul1) at (1.0, -1.8) {\Large $\otimes$};
-    \node[draw, circle, thick, fill=white, inner sep=1pt] (mul2) at (4.0, -1.8) {\Large $\otimes$};
-    \node[draw, circle, thick, fill=white, inner sep=1pt] (add) at (2.5, -2.6) {\Large $\oplus$};
-    \node[module, fill=blue!5, draw=blue!70!black, minimum width=4cm, minimum height=0.6cm] (hg) at (2.5, -3.4) {\textbf{Graph-Enhanced State} $H_G$};
+\node[lab, anchor=west] at (4.36,3.78)
+    {$H_{se}=H_{in}-H_{tr}$};
 
-    \draw[arrow] (hgtr.south) -- (mul1.north);
-    \draw[arrow] (hgse.south) -- (mul2.north);
-    \draw[arrow] (gate.west) -- (mul1.east) node[midway, above] {$1-g$};
-    \draw[arrow] (gate.east) -- (mul2.west) node[midway, above] {$g$};
-    \draw[arrow] (mul1.south) |- (add.west);
-    \draw[arrow] (mul2.south) |- (add.east);
-    \draw[arrow] (add.south) -- (hg.north);
+% Decomposition arrows
+\draw[arrow] (hin.south) -- (1.05,4.35) -- (conv.north);
+\draw[arrow] (hin.south) -- (4.05,4.35) -- (sub.north);
+\draw[arrow] (conv.east) -- (sub.west);
+
+\node[cond] (htr) at (1.05,2.10) {\textbf{Trend} $H_{tr}$};
+\node[cond] (hse) at (4.05,2.10) {\textbf{Seasonal} $H_{se}$};
+
+\draw[arrow] (conv.south) -- (htr.north);
+\draw[arrow] (sub.south) -- (hse.north);
+
+% =========================================================
+% 2. Branch-wise masked graph interaction
+% =========================================================
+\node[module,
+    fill=red!5,
+    draw=red!75!black,
+    dashed,
+    minimum width=2.75cm,
+    minimum height=0.48cm
+] (mask) at (2.55,1.18)
+{\scriptsize Distance Mask $\mathcal{M}_{dist}$\\[-1pt]
+\scriptsize branch-specific Top-$K$};
+
+\node[prop] (gctr) at (1.05,0.05)
+{Masked Top-$K$\\[-1pt] Graph Prop.\\[-1pt] $\mathbf{A}_{tr}$};
+
+\node[prop] (gcse) at (4.05,0.05)
+{Masked Top-$K$\\[-1pt] Graph Prop.\\[-1pt] $\mathbf{A}_{se}$};
+
+% Main branch arrows: clean vertical
+\draw[arrow] (htr.south) -- (gctr.north);
+\draw[arrow] (hse.south) -- (gcse.north);
+
+% Mask arrows: curved, not overlapping with main data arrows
+\draw[maskarrow]
+    (mask.south west) .. controls (1.75,0.82) and (1.35,0.72) .. (gctr.north east);
+
+\draw[maskarrow]
+    (mask.south east) .. controls (3.35,0.82) and (3.75,0.72) .. (gcse.north west);
+
+% Branch graph outputs
+\node[lab, font=\bfseries\scriptsize] (hgtr) at (1.05,-0.78) {$H_{tr}^{G}$};
+\node[lab, font=\bfseries\scriptsize] (hgse) at (4.05,-0.78) {$H_{se}^{G}$};
+
+\draw[arrow] (gctr.south) -- (hgtr.north);
+\draw[arrow] (gcse.south) -- (hgse.north);
+
+% =========================================================
+% 3. Learnable gated fusion
+% =========================================================
+\node[module, minimum width=1.95cm, minimum height=0.50cm]
+    (gate) at (2.55,-1.82)
+    {Gate $\sigma(\cdot)$};
+
+\node[op] (multr) at (1.05,-1.82) {\Large $\otimes$};
+\node[op] (mulse) at (4.05,-1.82) {\Large $\otimes$};
+
+\node[op] (add) at (2.55,-2.62) {\Large $\oplus$};
+
+\node[module,
+    fill=blue!5,
+    draw=blue!75!black,
+    minimum width=3.85cm,
+    minimum height=0.60cm
+] (hg) at (2.55,-3.28)
+{\textbf{Graph-Enhanced State} $H_G$};
+
+% Fusion arrows
+\draw[arrow] (hgtr.south) -- (multr.north);
+\draw[arrow] (hgse.south) -- (mulse.north);
+
+\draw[arrow] (gate.west) -- (multr.east)
+    node[midway, above, lab] {$1-g$};
+
+\draw[arrow] (gate.east) -- (mulse.west)
+    node[midway, above, lab] {$g$};
+
+\draw[arrow] (multr.south) |- (add.west);
+\draw[arrow] (mulse.south) |- (add.east);
+\draw[arrow] (add.south) -- (hg.north);
+
 \end{tikzpicture}
-\caption{Detailed architecture of R-STMF. The input latent representation $H_{in}$ undergoes manifold decomposition. The seasonal (residual) and trend (Conv1D) components independently undergo branch-wise distance-masked graph propagation prior to gated fusion.}
+\caption{Detailed architecture of R-STMF. The input latent representation $H_{in}$ is decomposed into trend and seasonal manifolds. The two branches independently perform distance-masked Top-$K$ graph propagation and are then recombined through learnable gated fusion.}
 \label{fig:rstmf_detail}
 \end{figure}
 
