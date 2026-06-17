@@ -30,10 +30,10 @@ Transformer-based forecasters conventionally mitigate sequence length by aggrega
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.4cm, y=1.4cm,
-    axis/.style={->, line width=0.8pt, draw=black!70},
-    signal/.style={gray!70, line width=1pt},
-    hard/.style={line width=1pt, fill opacity=0.1},
+    x=1.3cm, y=1.3cm,
+    axis/.style={->, line width=0.9pt, draw=black!70},
+    signal/.style={gray!70, line width=1.1pt},
+    hard/.style={line width=1pt, fill opacity=0.15},
     soft/.style={line width=1pt, fill opacity=0.25},
     warn/.style={->, line width=0.8pt, draw=red!80!black},
     note/.style={font=\tiny, align=center}
@@ -43,28 +43,34 @@ Transformer-based forecasters conventionally mitigate sequence length by aggrega
         \node[anchor=south west, font=\bfseries\small] at (0, 1.4) {Traditional Non-overlapping Hard Patches};
         \draw[axis] (0,0) -- (3.5,0) node[right] {Time $t$};
         \draw[signal] plot[domain=0.2:3.2, samples=100] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
-        \draw[blue!70!black, hard, fill=blue!10] (0.4, 0) rectangle (1.2, 1.2);
-        \draw[orange!85!black, hard, fill=orange!10] (1.2, 0) rectangle (2.0, 1.2);
-        \draw[green!60!black, hard, fill=green!10] (2.0, 0) rectangle (2.8, 1.2);
-        \node[text=red!80!black, font=\bfseries\scriptsize, align=center] (art) at (1.6, 1.7) {Temporal\\Discontinuity};
-        \draw[warn] (art.south west) -- (1.2, 1.25);
-        \draw[warn] (art.south east) -- (2.0, 1.25);
+        \draw[blue!70!black, hard, fill=blue!20] (0.4, 0) rectangle (1.2, 1.2);
+        \draw[orange!85!black, hard, fill=orange!20] (1.2, 0) rectangle (2.0, 1.2);
+        \draw[green!60!black, hard, fill=green!20] (2.0, 0) rectangle (2.8, 1.2);
+        
+        \node[text=red!80!black, font=\bfseries\scriptsize, align=center] (art1) at (1.2, -0.45) {Temporal Discontinuity};
+        \draw[warn] (art1.north) -- (1.2, 0.5);
+        \draw[warn] (art1.north) -- (2.0, 0.5);
     \end{scope}
     
     % (b) Soft
-    \begin{scope}[shift={(0, 0)}]
+    \begin{scope}[shift={(0, -0.2)}]
         \node[anchor=south west, font=\bfseries\small] at (0, 1.4) {Proposed Adaptive Gaussian Soft Windows};
         \draw[axis] (0,0) -- (3.5,0) node[right] {Time $t$};
         \draw[signal] plot[domain=0.2:3.2, samples=100] (\x,{0.6 + 0.3*sin(deg(2*\x)) + 0.1*sin(deg(12*\x))});
-        \path[fill=blue!20, draw=blue!80!black, soft] (0.2,0) plot[domain=0.2:1.8, samples=50] (\x,{1.1*exp(-((\x-1)^2)/0.15)}) -- (1.8,0) -- cycle;
-        \node[blue!80!black] at (1.0, 0.5) {$\mu_1, \sigma_1$};
-        \path[fill=orange!20, draw=orange!90!black, soft] (0.8,0) plot[domain=0.8:2.4, samples=50] (\x,{0.9*exp(-((\x-1.6)^2)/0.1)}) -- (2.4,0) -- cycle;
-        \node[orange!90!black] at (1.6, 0.4) {$\mu_2, \sigma_2$};
-        \path[fill=green!20, draw=green!60!black, soft] (1.4,0) plot[domain=1.4:3.0, samples=50] (\x,{1.2*exp(-((\x-2.2)^2)/0.2)}) -- (3.0,0) -- cycle;
-        \node[green!60!black] at (2.2, 0.55) {$\mu_3, \sigma_3$};
+        
+        \path[fill=blue!30, draw=blue!80!black, soft] (0.2,0) plot[domain=0.2:1.8, samples=50] (\x,{1.1*exp(-((\x-1)^2)/0.15)}) -- (1.8,0) -- cycle;
+        \node[blue!80!black, font=\scriptsize] at (1.0, 0.45) {$\mu_1, \sigma_1$};
+        
+        \path[fill=orange!30, draw=orange!90!black, soft] (0.8,0) plot[domain=0.8:2.4, samples=50] (\x,{0.9*exp(-((\x-1.6)^2)/0.1)}) -- (2.4,0) -- cycle;
+        \node[orange!90!black, font=\scriptsize] at (1.6, 0.35) {$\mu_2, \sigma_2$};
+        
+        \path[fill=green!30, draw=green!60!black, soft] (1.4,0) plot[domain=1.4:3.0, samples=50] (\x,{1.2*exp(-((\x-2.2)^2)/0.2)}) -- (3.0,0) -- cycle;
+        \node[green!60!black, font=\scriptsize] at (2.2, 0.5) {$\mu_3, \sigma_3$};
+        
+        \node[anchor=north west, font=\tiny\itshape, text=black!80] at (0.2, -0.2) {* Learnable center ($\mu_i$) and bandwidth ($\sigma_i$). Normalized overlapping weights: $\sum_i \tilde{W}_i(\tau) = 1$.};
     \end{scope}
 \end{tikzpicture}
-\caption{Mechanics of AGSP. By replacing discrete sequence chunking with continuous, differentiable density windows, the model autonomously mitigates boundary artifacts and atmospheric noise.}
+\caption{Mechanics of AGSP. By replacing discrete sequence chunking with continuous, differentiable density windows, the model autonomously mitigates boundary artifacts and preserves temporal continuity.}
 \label{fig:agsp_detail}
 \end{figure}
 
@@ -107,8 +113,8 @@ R-STMF serves as the graph adapter, specifically designed to capture the multi-m
 
 Let $H_{in} = H_T$ denote the input latent representation. For each node $n$, we apply a 1D depth-wise convolution along the patch dimension to extract the smoothed trend component $H_{tr}$, while the residual represents the seasonal (oscillatory) component $H_{se}$:
 \begin{align}
-H_{tr} &= \operatorname{GELU}(\operatorname{Conv1d}(H_{in})), \label{eq:rstmf_decomp_s} \\
-H_{se} &= H_{in} - H_{tr}. \label{eq:rstmf_decomp_r}
+H_{tr} &= \operatorname{GELU}(\operatorname{Conv1d}(H_{in})), \label{eq:rstmf_decomp_tr} \\
+H_{se} &= H_{in} - H_{tr}. \label{eq:rstmf_decomp_se}
 \end{align}
 
 \begin{figure}[!t]
@@ -116,54 +122,71 @@ H_{se} &= H_{in} - H_{tr}. \label{eq:rstmf_decomp_r}
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.3cm, y=1.3cm,
-    module/.style={draw=black!80, rounded corners=3pt, very thick, align=center, minimum height=0.6cm, fill=white},
-    cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=2.0cm},
-    arrow/.style={->, line width=0.9pt, draw=black!75},
+    x=1.35cm, y=1.25cm,
+    module/.style={draw=black!80, rounded corners=3pt, very thick, align=center, fill=white},
+    cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=1.5cm},
+    prop/.style={module, fill=teal!5, draw=teal!70!black, minimum width=1.8cm, minimum height=0.6cm},
+    arrow/.style={->, line width=1pt, draw=black!75},
     note/.style={font=\tiny, align=center}
 ]
     % Background Boxes
-    \draw[fill=blue!3, draw=none, rounded corners] (-0.5, 3.6) rectangle (7.5, 5.0);
-    \node[anchor=north west, font=\bfseries, text=blue!80!black] at (-0.5, 5.0) {1. Latent Patch Decomposition};
+    \begin{pgfonlayer}{background}
+        \draw[fill=blue!3, draw=none, rounded corners] (-0.3, 3.4) rectangle (5.3, 5.4);
+        \node[anchor=north west, font=\bfseries\scriptsize, text=blue!80!black] at (-0.3, 5.4) {1. Latent Patch Decomposition};
 
-    \draw[fill=red!3, draw=none, rounded corners] (-0.5, 1.2) rectangle (7.5, 3.4);
-    \node[anchor=north west, font=\bfseries, text=red!80!black] at (-0.5, 3.4) {2. Branch-wise Distance-Masked Top-$K$ Graph Interaction};
+        \draw[fill=red!3, draw=none, rounded corners] (-0.3, -0.6) rectangle (5.3, 2.6);
+        \node[anchor=north west, font=\bfseries\scriptsize, text=red!80!black] at (-0.3, 2.6) {2. Branch-wise Masked Graph Interaction};
 
-    \draw[fill=green!3, draw=none, rounded corners] (-0.5, -1.6) rectangle (7.5, 1.0);
-    \node[anchor=north west, font=\bfseries, text=green!80!black] at (-0.5, 1.0) {3. Learnable Gated Fusion};
+        \draw[fill=green!3, draw=none, rounded corners] (-0.3, -3.4) rectangle (5.3, -1.2);
+        \node[anchor=north west, font=\bfseries\scriptsize, text=green!80!black] at (-0.3, -1.2) {3. Learnable Gated Fusion};
+    \end{pgfonlayer}
 
     % 1. Decomp
-    \node[module, minimum width=3.5cm] (hin) at (3.5, 4.4) {$H_{in}$ (Latent Representation)};
-    \node[cond] (htr) at (1.5, 3.8) {\textbf{Trend} $H_{tr}$};
-    \node[cond] (hse) at (5.5, 3.8) {\textbf{Seasonal} $H_{se}$};
-    \draw[arrow] (hin.south) -- (htr.north) node[midway, left, align=right] {Conv1D};
-    \draw[arrow] (hin.south) -- (hse.north) node[midway, right, align=left] {$-$\\ (Residual)};
+    \node[module, fill=gray!5, minimum width=3.5cm, minimum height=0.5cm] (hin) at (2.5, 4.8) {\textbf{$H_{in}$} (Latent Representation)};
+    \node[module, fill=white, minimum width=1.5cm, minimum height=0.5cm] (conv) at (1.0, 3.8) {Conv1D\\+ GELU};
+    \node[draw, circle, thick, fill=white, minimum size=5.5mm, inner sep=0pt] (sub) at (4.0, 3.8) {\Large $-$};
+    
+    \draw[arrow] (hin.south) -- (1.0, 4.4) -- (conv.north);
+    \draw[arrow] (hin.south) -- (4.0, 4.4) -- (sub.north) node[midway, right, note] {Residual};
+    \draw[arrow] (conv.east) -- (sub.west);
+
+    \node[cond, minimum height=0.5cm] (htr) at (1.0, 2.0) {\textbf{Trend} $H_{tr}$};
+    \node[cond, minimum height=0.5cm] (hse) at (4.0, 2.0) {\textbf{Seasonal} $H_{se}$};
+    \draw[arrow] (conv.south) -- (htr.north);
+    \draw[arrow] (sub.south) -- (hse.north);
 
     % 2. Graph Ops
-    \node[module, align=center] (mask) at (3.5, 2.6) {Distance Matrix $D$ \\ $\odot$ Top-$K$ Mask $M_K$};
-    \node[circle, draw, thick, fill=teal!10, minimum size=0.8cm] (gctr) at (1.5, 1.6) {GCN};
-    \node[circle, draw, thick, fill=teal!10, minimum size=0.8cm] (gcse) at (5.5, 1.6) {GCN};
-    \draw[->, thick, dashed, draw=red!70!black] (mask) -- (gctr);
-    \draw[->, thick, dashed, draw=red!70!black] (mask) -- (gcse);
+    \node[module, fill=red!5, draw=red!70!black, dashed, minimum width=4cm, minimum height=0.5cm] (mask) at (2.5, 1.0) {Distance Prior $D \to$ Feasible Mask $\mathcal{M}_{dist}$};
+    \node[prop] (gctr) at (1.0, 0.0) {Masked Top-$K$\\Graph Prop.};
+    \node[prop] (gcse) at (4.0, 0.0) {Masked Top-$K$\\Graph Prop.};
+
+    \draw[arrow, dashed, draw=red!70!black] (mask.south) -- (1.0, 0.6) -- (gctr.north);
+    \draw[arrow, dashed, draw=red!70!black] (mask.south) -- (4.0, 0.6) -- (gcse.north);
+    
     \draw[arrow] (htr.south) -- (gctr.north);
     \draw[arrow] (hse.south) -- (gcse.north);
 
     % 3. Fusion
-    \node[module, minimum width=2cm] (gate) at (3.5, 0.4) {Gate $\sigma(\cdot)$};
-    \node[draw, circle, thick, fill=white, inner sep=1pt] (mul1) at (1.5, 0.4) {\Large $\otimes$};
-    \node[draw, circle, thick, fill=white, inner sep=1pt] (mul2) at (5.5, 0.4) {\Large $\otimes$};
-    \node[draw, circle, thick, fill=white, inner sep=1pt] (add) at (3.5, -0.4) {\Large $\oplus$};
-    \node[module, fill=blue!5, draw=blue!70!black, minimum width=3.5cm] (hg) at (3.5, -1.2) {\textbf{Graph-Enhanced State} $H_G$};
+    \node[font=\bfseries] (hgtr) at (1.0, -0.8) {$H_{tr}^G$};
+    \node[font=\bfseries] (hgse) at (4.0, -0.8) {$H_{se}^G$};
+    \draw[arrow] (gctr.south) -- (hgtr.north);
+    \draw[arrow] (gcse.south) -- (hgse.north);
 
-    \draw[arrow] (gctr) -- (mul1);
-    \draw[arrow] (gcse) -- (mul2);
-    \draw[arrow] (gate) -- (mul1) node[midway, above] {$g$};
-    \draw[arrow] (gate) -- (mul2) node[midway, above] {$1-g$};
-    \draw[arrow] (mul1) |- (add);
-    \draw[arrow] (mul2) |- (add);
-    \draw[arrow] (add) -- (hg);
+    \node[module, minimum width=2cm, minimum height=0.5cm] (gate) at (2.5, -1.8) {Gate $\sigma(\cdot)$};
+    \node[draw, circle, thick, fill=white, inner sep=1pt] (mul1) at (1.0, -1.8) {\Large $\otimes$};
+    \node[draw, circle, thick, fill=white, inner sep=1pt] (mul2) at (4.0, -1.8) {\Large $\otimes$};
+    \node[draw, circle, thick, fill=white, inner sep=1pt] (add) at (2.5, -2.6) {\Large $\oplus$};
+    \node[module, fill=blue!5, draw=blue!70!black, minimum width=4cm, minimum height=0.6cm] (hg) at (2.5, -3.4) {\textbf{Graph-Enhanced State} $H_G$};
+
+    \draw[arrow] (hgtr.south) -- (mul1.north);
+    \draw[arrow] (hgse.south) -- (mul2.north);
+    \draw[arrow] (gate.west) -- (mul1.east) node[midway, above] {$1-g$};
+    \draw[arrow] (gate.east) -- (mul2.west) node[midway, above] {$g$};
+    \draw[arrow] (mul1.south) |- (add.west);
+    \draw[arrow] (mul2.south) |- (add.east);
+    \draw[arrow] (add.south) -- (hg.north);
 \end{tikzpicture}
-\caption{Detailed architecture of R-STMF. The input latent representation $H_{in}$ undergoes manifold decomposition. The seasonal (residual) and trend (Conv1D) components independently undergo branch-wise distance-masked graph convolution prior to gated fusion.}
+\caption{Detailed architecture of R-STMF. The input latent representation $H_{in}$ undergoes manifold decomposition. The seasonal (residual) and trend (Conv1D) components independently undergo branch-wise distance-masked graph propagation prior to gated fusion.}
 \label{fig:rstmf_detail}
 \end{figure}
 
@@ -187,62 +210,87 @@ where $H_{c}^G$ denotes the manifold $c$ after spatial propagation via $A_c$. Th
 
 \subsection{Future-ExG Conditioning (K-AMC)}
 \label{sec:kamc}
-We refer to this module as K-AMC, short for KAN-enhanced Adaptive Modulation and Conditioning. It serves as a generalized interface for known systemic drivers, injecting future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. Aligning with the TimeXer philosophy \cite{wang2024timexer}, the macro-trend global token acts as the primary bridge to cross-attend and ingest external factors. We define an alignment operator $\Gamma: \mathbb{R}^{H \times D_f} \to \mathbb{R}^{(P+1) \times d_{exg}}$ that maps the future horizon into variate tokens corresponding to the global and patch states. 
+We refer to this module as K-AMC, short for KAN-enhanced Adaptive Modulation and Conditioning. It serves as a generalized interface for known systemic drivers, injecting future exogenous drivers $\mathbf{E}^f \in \mathbb{R}^{B \times H \times D_f}$ into the latent representations. Aligning with the TimeXer philosophy \cite{wang2024timexer}, the macro-trend global token acts as the primary bridge to cross-attend and ingest external factors. We define an alignment operator $\Gamma$ that maps the future horizon into variate tokens corresponding to the latent states.
 
 \begin{figure}[!t]
 \centering
 \begin{tikzpicture}[
     font=\rmfamily\scriptsize,
     >=Stealth,
-    x=1.4cm, y=1.4cm,
+    x=1.5cm, y=1.3cm,
     module/.style={draw=black!80, rounded corners=3pt, very thick, align=center},
     input/.style={module, fill=blue!5, draw=blue!70!black, minimum width=2.2cm, minimum height=0.6cm},
-    kan/.style={module, fill=teal!5, draw=teal!70!black, minimum width=3.0cm, minimum height=1.6cm},
+    kan/.style={module, fill=teal!5, draw=teal!70!black, minimum width=2.4cm, minimum height=1.6cm},
     cond/.style={module, fill=violet!5, draw=violet!70!black, minimum width=1.1cm, minimum height=0.5cm},
-    arrow/.style={->, line width=0.9pt, draw=black!75},
+    arrow/.style={->, line width=1pt, draw=black!75},
     note/.style={font=\tiny, align=center}
 ]
     % Left side: Parameter generation
-    \node[input] (ef) at (0, 3.8) {\textbf{Future ExG} $\mathbf{E}^f$};
-    \draw[arrow] (ef.south) -- ++(0,-0.5) node[midway, right, align=left] {AvgPool1d\\Temporal align};
+    \node[input] (ef) at (0, 4.4) {\textbf{Future ExG} $\mathbf{E}^f$};
+    \node[module, fill=gray!5, minimum width=1.8cm, minimum height=0.5cm] (align) at (0, 3.4) {Alignment $\Gamma$};
+    \draw[arrow] (ef.south) -- (align.north) node[midway, right] {AvgPool1d};
     
-    \node[kan] (kanbox) at (0, 2.1) {};
-    \node[anchor=north, font=\bfseries] at (0, 2.85) {KAN Block};
-    \fill (-0.8, 2.3) circle (1.5pt); \fill (0.8, 2.3) circle (1.5pt); \fill (0, 1.6) circle (1.5pt);
-    \draw[violet!80!black, ->, line width=1.2pt] (-0.8, 2.3) .. controls (-0.7, 1.8) and (-0.2, 1.7) .. (-0.05, 1.65) node[midway, left] {$\phi(x)$};
-    \draw[violet!80!black, ->, line width=1.2pt] (0.8, 2.3) .. controls (0.7, 1.8) and (0.2, 1.7) .. (0.05, 1.65);
+    \node[kan] (kanbox) at (0, 1.7) {};
+    \node[anchor=north, font=\bfseries] at (0, 2.45) {KAN Block};
+    \node[anchor=north, font=\tiny\itshape, text=black!70] at (0, 2.2) {Spline Edge Functions};
+    
+    % Bipartite Graph inside KAN
+    \fill (-0.5, 1.8) circle (1.5pt); \fill (0.5, 1.8) circle (1.5pt);
+    \fill (-0.3, 1.1) circle (1.5pt); \fill (0.3, 1.1) circle (1.5pt);
+    \draw[violet!80!black, ->, line width=1.1pt] (-0.5, 1.8) .. controls (-0.6, 1.4) and (-0.5, 1.3) .. (-0.3, 1.1) node[midway, left] {\tiny $\phi(x)$};
+    \draw[violet!80!black, ->, line width=1.1pt] (-0.5, 1.8) -- (0.3, 1.1);
+    \draw[violet!80!black, ->, line width=1.1pt] (0.5, 1.8) -- (-0.3, 1.1);
+    \draw[violet!80!black, ->, line width=1.1pt] (0.5, 1.8) .. controls (0.6, 1.4) and (0.5, 1.3) .. (0.3, 1.1);
+    
+    \draw[arrow] (align.south) -- (0, 2.5);
 
-    \node[cond] (gamma) at (-0.8, 0.5) {\Large $\gamma$};
-    \node[cond] (beta) at (0.8, 0.5) {\Large $\beta$};
-    \draw[line width=1pt, draw=black!75] (0, 1.3) -- (0, 0.9);
-    \draw[arrow] (0, 0.9) -| (gamma.north);
-    \draw[arrow] (0, 0.9) -| (beta.north);
+    \node[cond] (gamma) at (-0.6, -0.2) {\Large $\gamma$};
+    \node[cond] (beta) at (0.6, -0.2) {\Large $\beta$};
+    \draw[line width=1.2pt, draw=black!75] (0, 0.9) -- (0, 0.4);
+    \draw[arrow] (0, 0.4) -| (gamma.north);
+    \draw[arrow] (0, 0.4) -| (beta.north);
 
     % Right side: Main modulation flow
-    \node[module, fill=gray!5, minimum width=1.8cm, minimum height=0.6cm] (hg) at (3.5, 3.8) {\textbf{$H_G$}};
-    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (mul) at (3.5, 2.6) {\Large $\otimes$};
-    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add1) at (3.5, 1.4) {\Large $\oplus$};
-    \node[module, fill=yellow!10, draw=orange!80!black, minimum height=0.5cm] (scale) at (3.5, 0.5) {$\times\ 0.1$};
-    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add2) at (3.5, -0.4) {\Large $\oplus$};
-    \node[module, fill=blue!8, draw=blue!70!black, minimum width=2.8cm, minimum height=0.7cm] (hf) at (3.5, -1.3) {\textbf{Conditioned State} $H_F$};
+    \node[input, fill=gray!10, draw=gray!80!black] (hg) at (3.2, 4.4) {\textbf{$H_G$}};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (mul) at (3.2, 3.2) {\Large $\otimes$};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add1) at (3.2, 2.0) {\Large $\oplus$};
+    \node[module, fill=yellow!10, draw=orange!80!black, minimum width=1.6cm, minimum height=0.5cm] (hmod) at (3.2, 0.8) {\textbf{$H_{\text{mod}}$}};
 
+    % Convex Blending Area
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (mul_alpha) at (3.2, -0.2) {\Large $\otimes$};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (mul_1alpha) at (4.7, -0.2) {\Large $\otimes$};
+    \node[draw, circle, thick, fill=white, minimum size=6.5mm, inner sep=0pt] (add2) at (3.2, -1.2) {\Large $\oplus$};
+    
+    \node[input] (hf) at (3.2, -2.4) {\textbf{ExG-conditioned State} $H_F$};
+
+    % Main vertical path
     \draw[arrow] (hg.south) -- (mul.north);
     \draw[arrow] (mul.south) -- (add1.north);
-    \draw[arrow] (add1.south) -- (scale.north);
-    \draw[arrow] (scale.south) -- (add2.north);
+    \draw[arrow] (add1.south) -- (hmod.north);
+    \draw[arrow] (hmod.south) -- (mul_alpha.north);
+    \draw[arrow] (mul_alpha.south) -- (add2.north);
     \draw[arrow] (add2.south) -- (hf.north);
 
+    % Residual Path
+    \draw[arrow, draw=gray!80, line width=1.2pt] (hg.east) -| (mul_1alpha.north);
+    \draw[arrow] (mul_1alpha.south) |- (add2.east);
+
+    % Weights for Blending
+    \node[anchor=east, font=\scriptsize, text=orange!80!black] at (3.1, -0.2) {$\alpha=0.1$};
+    \node[anchor=west, font=\scriptsize, text=gray!80!black] at (4.8, -0.2) {$1-\alpha$};
+
     % Routing parameters to operators
-    \draw[arrow] (gamma.east) -- ++(2.0, 0) |- (mul.west) node[pos=0.8, above, font=\scriptsize] {Scale};
-    \draw[arrow] (beta.east) -- ++(0.4, 0) |- (add1.west) node[pos=0.8, above, font=\scriptsize] {Shift};
+    \draw[arrow] (gamma.east) -- ++(2.2, 0) |- (mul.west) node[pos=0.8, above, font=\scriptsize] {Scale};
+    \draw[arrow] (beta.east) -- ++(1.0, 0) |- (add1.west) node[pos=0.8, above, font=\scriptsize] {Shift};
     
-    % Residual path
-    \draw[arrow, draw=gray!80, line width=1pt] (hg.east) -- ++(0.8, 0) |- (add2.east);
-    
-    % Formula
-    \node[font=\bfseries] at (1.75, -2.2) {$H_F = H_G + 0.1 \cdot (\gamma \odot H_G + \beta)$};
+    % Formula Box
+    \node[module, fill=white, draw=black!30, dashed, align=center] at (1.6, -3.6) {
+        \textbf{Convex Blending Formula:}\\
+        $H_{\text{mod}} = \gamma \odot H_G + \beta$ \\
+        $H_F = (1-\alpha)H_G + \alpha H_{\text{mod}}$
+    };
 \end{tikzpicture}
-\caption{Mechanics of K-AMC. Future exogenous drivers are aligned and processed through spline-based KAN edges to produce dynamic modulation parameters. The modulation updates the graph state via a scaled residual connection.}
+\caption{Mechanics of K-AMC. Future exogenous drivers are aligned and processed through a KAN block (featuring learnable spline edge functions) to produce dynamic scale and shift parameters. The final conditioned state is derived via a stable convex blending mechanism.}
 \label{fig:kamc_detail}
 \end{figure}
 
@@ -256,14 +304,9 @@ where $B_i(x)$ are B-spline basis functions. The analytical derivative is:
 \frac{\partial \phi(x)}{\partial x} = w_b \operatorname{SiLU}'(x) + \sum_{i=1}^{k} c_i B'_i(x).
 \label{eq:kan_derivative}
 \end{equation}
-By aggregating these edge functions, the KAN block produces modulation parameters:
+By aggregating these edge functions, the KAN block produces modulation parameters $[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f)$. The final conditioned latent state is then obtained via element-wise scale and shift, stabilized by a convex blending scheme with hyperparameter $\alpha=0.1$:
 \begin{equation}
-[\gamma,\beta]=\operatorname{KAN}(\bar{\mathbf{E}}^f), \quad \gamma, \beta \in \mathbb{R}^{B \times N \times (P+1) \times d}.
-\label{eq:kamc_kan}
-\end{equation}
-The conditioned latent state is then obtained via element-wise scale and shift:
-\begin{equation}
-H_F=H_G+\lambda\left(\gamma\odot H_G+\beta-H_G\right).
+H_{mod} = \gamma \odot H_G + \beta, \quad H_F = (1-\alpha)H_G + \alpha H_{mod}.
 \label{eq:kamc_mod}
 \end{equation}
 
@@ -321,7 +364,7 @@ This decoupled formulation ensures the model learns to respect physical boundari
 \STATE \COMMENT{\textit{Phase IV: K-AMC Exogenous Modulation ($\mathcal{H}_\theta$ part 3)}}
 \STATE Align horizon-wise $\mathbf{E}^f$ to patch-wise representation $\bar{\mathbf{E}}^f$.
 \STATE Compute B-spline edge functions via KAN block to generate $[\gamma, \beta]$.
-\STATE Modulate latent states: $H_F \leftarrow H_G + \lambda(\gamma \odot H_G + \beta - H_G)$.
+\STATE Modulate latent states: $H_F \leftarrow (1-\alpha)H_G + \alpha(\gamma \odot H_G + \beta)$.
 
 \STATE \COMMENT{\textit{Phase V: PI-DCH Constraint Decoding ($\mathcal{C}_\Omega$)}}
 \STATE Decode unconstrained prediction $\tilde{Y} = \operatorname{Linear}(H_F)$.
