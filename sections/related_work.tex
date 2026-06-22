@@ -7,28 +7,150 @@ This section reviews representative research trajectories pertinent to PhyST-Net
 \label{tab:model_comparison}
 \centering
 \scriptsize
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{lccccc}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\tabcolsep}{2.8pt}
+
+\begin{tabularx}{\textwidth}{l l c Y Y Y Y}
 \toprule
-\textbf{Model} & \textbf{Paradigm} & \textbf{Temporal Tokenization} & \textbf{Spatial Interaction} & \textbf{Exogenous Integration} & \textbf{Constraint Awareness} \\
+\textbf{Category} 
+& \textbf{Model} 
+& \textbf{Paradigm} 
+& \textbf{Temporal Tokenization} 
+& \textbf{Spatial Interaction} 
+& \textbf{Exogenous Integration} 
+& \textbf{Constraint Awareness} \\
 \midrule
-Informer \cite{zhou2021informer} & Transformer & Point-wise (ProbSparse) & None (Single-node) & Feature Concatenation & None \\
-Autoformer \cite{wu2021autoformer} & Transformer & Series Decomposition & None (Single-node) & Feature Concatenation & None \\
-PatchTST \cite{nie2023patchtst} & Transformer & Rigid Temporal Patches & None (Single-node) & None & None \\
-iTransformer \cite{liu2024itransformer} & Transformer & Inverted Dimension & None (Single-node) & Covariate Tokens & None \\
-STGCN \cite{yu2017spatio} & ST-GNN & Convolutional (Gated) & Static Graph Conv & Feature Concatenation & None \\
-Graph WaveNet \cite{wu2019graph} & ST-GNN & Dilated Causal Conv & Adaptive Graph Conv & Feature Concatenation & None \\
-SDG-Net \cite{li2024sdg} & ST-GNN & Convolutional & Latent Dual-Graph & None & None \\
-TimeXer \cite{wang2024timexer} & Hybrid & Rigid Patches & Global Token / Cross-Attn & Variate Tokens (Cross-Attn) & None \\
-ConFormer \cite{conformer2025} & Hybrid & Transformer Encoder & Cross-Attention & External Event Embedding & None \\
-GCGNet \cite{gcgnet2026} & ST-GNN & Generative / Recurrent & Consistent Alignment & Joint Temporal-Channel & None \\
-ExoST \cite{exost2025} & ST-GNN & Convolutional & ExG-driven Graph & Select-then-Balance & None \\
-GeatFormer \cite{liu2026geatformer} & Physics-Inf. & Rigid Patches & Dual-branch Graph & None & Penalty Loss \\
-PGNN-TFT \cite{PGNNTFT2025} & Physics-Inf. & Transformer (TFT) & Static Domain Graph & None & Post-hoc Clipping \\
+
+\multirow{4}{*}{\makecell[l]{General\\Transformer\\Forecasting}}
+& Informer \cite{zhou2021informer} 
+& Transformer 
+& Point-wise / ProbSparse 
+& -- 
+& Feature concat. 
+& -- \\
+
+& Autoformer \cite{wu2021autoformer} 
+& Transformer 
+& Series decomposition 
+& -- 
+& Feature concat. 
+& -- \\
+
+& PatchTST \cite{nie2023patchtst} 
+& Transformer 
+& Rigid patches 
+& -- 
+& -- 
+& -- \\
+
+& iTransformer \cite{liu2024itransformer} 
+& Transformer 
+& Inverted dimension 
+& Channel mixing 
+& Covariate tokens 
+& -- \\
+
 \midrule
-\textbf{PhyST-Net (Ours)} & \textbf{Hybrid} & \textbf{Continuous Gaussian (AGSP)} & \textbf{Decoupled Manifold (R-STMF)} & \textbf{KAN Conditioning (K-AMC)} & \textbf{Diff. Head (PI-DCH)} \\
+
+\multirow{3}{*}{\makecell[l]{Spatio-temporal\\Graph\\Forecasting}}
+& STGCN \cite{yu2017spatio} 
+& ST-GNN 
+& Gated temporal conv. 
+& Static graph conv. 
+& Feature concat. 
+& -- \\
+
+& Graph WaveNet \cite{wu2019graph} 
+& ST-GNN 
+& Dilated causal conv. 
+& Adaptive graph conv. 
+& Feature concat. 
+& -- \\
+
+& SDG-Net \cite{li2024sdg} 
+& ST-GNN 
+& Convolutional 
+& Latent dual-graph 
+& -- 
+& -- \\
+
+\midrule
+
+\multirow{5}{*}{\makecell[l]{Exogenous-aware\\Spatio-temporal\\Forecasting}}
+& TimeXer \cite{wang2024timexer} 
+& Hybrid 
+& Rigid patches 
+& Global token / cross-attn. 
+& Variate tokens / cross-attn. 
+& -- \\
+
+& ConFormer \cite{conformer2025} 
+& Hybrid 
+& Transformer encoder 
+& Cross-attention 
+& External event emb. 
+& -- \\
+
+& DAG \cite{dag2025} 
+& ST-GNN 
+& Dependency modeling 
+& Directed adaptive graph 
+& ExG-guided dependency 
+& -- \\
+
+& GCGNet \cite{gcgnet2026} 
+& ST-GNN 
+& Generative / recurrent 
+& Consistent alignment 
+& Joint temporal-channel 
+& -- \\
+
+& ExoST \cite{exost2025} 
+& ST-GNN 
+& Convolutional 
+& ExG-driven graph 
+& Select-then-balance 
+& -- \\
+
+\midrule
+
+\multirow{2}{*}{\makecell[l]{Physics-aware\\Forecasting}}
+& GeatFormer \cite{liu2026geatformer} 
+& Physics-inf. 
+& Rigid patches 
+& Dual-branch graph 
+& -- 
+& Penalty loss \\
+
+& PGNN-TFT \cite{PGNNTFT2025} 
+& Physics-inf. 
+& Transformer / TFT 
+& Static domain graph 
+& -- 
+& Post-hoc clipping \\
+
+\midrule
+
+\rowcolor{gray!12}
+\textbf{Ours} 
+& \textbf{PhyST-Net} 
+& \textbf{Hybrid} 
+& \textbf{AGSP} 
+& \textbf{R-STMF} 
+& \textbf{K-AMC} 
+& \textbf{PI-DCH} \\
+
 \bottomrule
-\end{tabular}
+\end{tabularx}
+
+\vspace{2pt}
+\begin{minipage}{\textwidth}
+\scriptsize
+\textit{Notes:} ``--'' indicates that the corresponding mechanism is not explicitly considered. 
+ExG denotes exogenous variables; concat., emb., conv., and attn. denote concatenation, embedding, convolution, and attention, respectively. 
+AGSP, R-STMF, K-AMC, and PI-DCH denote adaptive Gaussian-soft-windowed patching, relational spatio-temporal manifold fusion, KAN-based adaptive modulation conditioning, and physics-informed differentiable constraint head, respectively.
+\end{minipage}
+
 \end{table*}
 
 \subsection{Temporal Forecasting and Transformer Architectures}
