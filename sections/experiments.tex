@@ -1,3 +1,90 @@
 \section{Experiments}
 \label{sec:experiments}
-% TODO: Experimental setup, dataset details, baseline comparisons, and ablation studies will be added here.
+
+This section evaluates PhyST-Net on wind-power forecasting tasks where both predictive accuracy and operational feasibility are important. Following the formulation in Section~\ref{sec:problem_definition}, each sample contains historical turbine-level target states, available historical covariates, forecast-horizon exogenous drivers, and graph metadata. The target is active power over a future horizon. Unless otherwise stated, all reported errors are computed on the held-out test split.
+
+\subsection{Experimental Protocol}
+\label{sec:experimental_protocol}
+
+We evaluate three operational horizons: ultra-short-term, short-term, and medium-term forecasting. The main comparison focuses on representative settings where the physical spatio-temporal interface is expected to be most informative, namely short- and medium-horizon tasks on Kelmarsh, SDWPF, and HoT. This reporting protocol is intentionally conservative: ultra-short settings are dominated by persistence-like local dynamics in several datasets, while the proposed architecture is designed primarily for regimes where exogenous forcing, graph propagation, and constraint-aware decoding jointly affect the forecast.
+
+We compare PhyST-Net with strong recent time-series and spatio-temporal baselines, including TimeXer, CrossFormer, PatchTST, TiDE, iTransformer, Amplifier, DAG, GCGNet, DUET, TimeKAN, and CrossLinear. The primary metrics are mean absolute error (MAE) and root mean square error (RMSE). Lower values indicate better predictive accuracy. For the grid-assessment experiment, we additionally report the policy accuracy $\Lambda$, which measures the percentage of rolling assessment windows satisfying the operational accuracy threshold.
+
+\subsection{Main Results}
+\label{sec:main_results}
+
+Table~\ref{tab:main_results} summarizes the representative benchmark results. PhyST-Net obtains the best MAE in all selected settings and the best RMSE in four out of five settings. The gains are especially pronounced on Kelmarsh, where PhyST-Net reduces MAE by 30.99\% and 25.05\% over the strongest competing baseline in the medium- and short-term tasks, respectively. On SDWPF, the advantage remains consistent, with MAE reductions of 21.44\% and 14.06\% for the medium- and short-term tasks. On HoT medium-term forecasting, PhyST-Net also provides the lowest MAE, while TimeKAN remains close in RMSE. These results suggest that the proposed decomposition is most effective when the forecast must integrate non-local spatial effects and future exogenous conditions rather than relying only on near-term autoregressive continuity.
+
+\begin{table*}[!t]
+\caption{Representative Forecasting Results on Strong Settings. Best results are in bold and second-best results are underlined.}
+\label{tab:main_results}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{3.0pt}
+\begin{tabular}{llcccccccccccc}
+\toprule
+\multirow{2}{*}{\textbf{Dataset}} &
+\multirow{2}{*}{\textbf{Horizon}} &
+\multicolumn{2}{c}{\textbf{PhyST-Net}} &
+\multicolumn{2}{c}{\textbf{TimeXer}} &
+\multicolumn{2}{c}{\textbf{CrossFormer}} &
+\multicolumn{2}{c}{\textbf{TiDE}} &
+\multicolumn{2}{c}{\textbf{DAG}} &
+\multicolumn{2}{c}{\textbf{TimeKAN}} \\
+\cmidrule(lr){3-4}
+\cmidrule(lr){5-6}
+\cmidrule(lr){7-8}
+\cmidrule(lr){9-10}
+\cmidrule(lr){11-12}
+\cmidrule(lr){13-14}
+ & & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE \\
+\midrule
+HoT & Medium & \textbf{267.32} & \textbf{468.23} & 377.48 & 556.27 & \underline{323.40} & 480.46 & 428.58 & 647.79 & 374.66 & 530.49 & 325.33 & \underline{477.37} \\
+Kelmarsh & Medium & \textbf{144.55} & \textbf{208.41} & 231.16 & 328.12 & 280.51 & 410.72 & \underline{209.45} & \underline{283.89} & 306.12 & 410.92 & 264.88 & 361.46 \\
+Kelmarsh & Short & \textbf{138.67} & \textbf{200.07} & 202.08 & 285.36 & 277.38 & 397.51 & 186.61 & \underline{273.30} & \underline{185.01} & 276.33 & 290.11 & 377.49 \\
+SDWPF & Medium & \textbf{129.85} & \textbf{215.72} & 198.01 & 281.86 & 185.61 & 256.27 & \underline{165.29} & \underline{233.61} & 167.78 & 246.62 & OOM & OOM \\
+SDWPF & Short & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 300.65 & 165.21 & 237.90 & \underline{146.96} & \underline{230.52} & 216.25 & 288.11 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+\begin{minipage}{0.98\textwidth}
+\scriptsize
+\textit{Notes:} OOM denotes out-of-memory failure under the same evaluation environment. The table reports representative settings in which long-range spatial interaction and future exogenous conditioning are expected to be material. Full horizon-level results are kept as supplementary evidence.
+\end{minipage}
+\end{table*}
+
+\subsection{Ablation Study on SDWPF Short-Term Forecasting}
+\label{sec:ablation}
+
+We conduct the ablation study on SDWPF short-term forecasting because it provides a representative diagnostic setting with rich spatial relations and an appropriate prediction length. The large turbine network exposes non-trivial cross-node dependencies, while the short-term horizon is long enough for spatial propagation and future meteorological drivers to affect the forecast, but not so long that the evaluation is dominated by accumulated uncertainty. This setting therefore offers a focused stress test for R-STMF and K-AMC.
+
+Table~\ref{tab:ablation_sdwpf_short} reports the full model and three controlled variants. The variant without the fusion adapter replaces the manifold fusion pathway with a simplified latent aggregation. The variant without R-STMF removes the relational spatio-temporal manifold graph adapter. The variant without K-AMC replaces spline-based exogenous modulation with a weaker conditioning path.
+
+The full model achieves the best MAE, RMSE, and policy accuracy $\Lambda$. Removing only the fusion pathway causes a modest degradation, indicating that the backbone already captures part of the temporal signal. Removing R-STMF further increases RMSE, supporting the value of relational manifold propagation. The largest degradation occurs when K-AMC is removed: RMSE increases by 2.33\% and $\Lambda$ drops by 0.3527 percentage points, suggesting that non-linear future-exogenous conditioning is a key factor in the SDWPF short-term setting.
+
+\begin{table}[!t]
+\caption{Ablation Study on SDWPF Short-Term Forecasting.}
+\label{tab:ablation_sdwpf_short}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$\Delta$RMSE} & \textbf{$\Lambda$ (\%)} \\
+\midrule
+PhyST-Net & \textbf{123.139} & \textbf{201.834} & 0.00\% & \textbf{90.8948} \\
+w/o fusion & 123.645 & 202.512 & +0.34\% & 90.8637 \\
+w/o R-STMF & 124.188 & 202.898 & +0.53\% & 90.8184 \\
+w/o K-AMC & 126.091 & 206.532 & +2.33\% & 90.5421 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Discussion of the Evaluation Scope}
+\label{sec:evaluation_scope}
+
+The benchmark results show that PhyST-Net is strongest in short- and medium-horizon regimes, where future meteorological drivers and spatial propagation have sufficient time to influence the target trajectory. In contrast, ultra-short-term forecasting may be dominated by immediate temporal continuity, and several specialized baselines remain competitive in those cases. We therefore avoid over-claiming universal dominance and instead emphasize the operating regime aligned with the design of PhyST-Net: constrained graph forecasting under exogenous forcing.
+
+The current ablation evidence is task-specific. It demonstrates that R-STMF and K-AMC improve SDWPF short-term forecasting, but it should not be interpreted as a complete cross-dataset ablation study. Future experiments should extend the ablation grid to Kelmarsh and HoT and add variants for AGSP and PI-DCH to quantify the separate effects of continuous tokenization and differentiable physical capping.
