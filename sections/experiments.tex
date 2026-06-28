@@ -8,12 +8,39 @@ This section evaluates PhyST-Net on wind-power forecasting tasks where both pred
 
 We evaluate three operational horizons: ultra-short-term, short-term, and medium-term forecasting. The main comparison focuses on representative settings where the physical spatio-temporal interface is expected to be most informative, namely short- and medium-horizon tasks on Kelmarsh, SDWPF, and HoT. This reporting protocol is intentionally conservative: ultra-short settings are dominated by persistence-like local dynamics in several datasets, while the proposed architecture is designed primarily for regimes where exogenous forcing, graph propagation, and constraint-aware decoding jointly affect the forecast.
 
-We compare PhyST-Net with strong recent time-series and spatio-temporal baselines, including TimeXer, CrossFormer, PatchTST, TiDE, iTransformer, Amplifier, DAG, GCGNet, DUET, TimeKAN, and CrossLinear. The primary metrics are mean absolute error (MAE) and root mean square error (RMSE). Lower values indicate better predictive accuracy. For the grid-assessment experiment, we additionally report the policy accuracy $\Lambda$, which measures the percentage of rolling assessment windows satisfying the operational accuracy threshold.
+All datasets are split chronologically to avoid temporal leakage. The first 70\% of samples are used for training, the following 10\% for validation and early stopping, and the final 20\% for testing. Standardization parameters for power and meteorological variables are fitted only on the training segment and then reused for validation and testing. Each sample contains a historical power window, historical SCADA variables, forecast-horizon numerical weather prediction (NWP) variables, calendar time encodings, and turbine coordinates. Predictions are inverse-transformed before computing the reported physical-unit errors.
+
+Table~\ref{tab:exp_design} summarizes the representative configurations used in the main comparison. HoT and Kelmarsh are sampled every 10 minutes, while SDWPF is sampled every 15 minutes. For 10-minute datasets, the short-term setting uses a 4-day look-back window and a 3-day forecast horizon; the medium-term setting uses about 13.3 days of history and 10 days of prediction. For SDWPF, the corresponding step counts are adjusted to its 15-minute sampling interval. This design keeps the physical duration comparable across datasets while respecting their native resolutions.
+
+\begin{table}[!t]
+\caption{Experimental Design for Representative Wind-Power Tasks.}
+\label{tab:exp_design}
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.12}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Dataset} & \textbf{$N$} & \textbf{$D_f$} & \textbf{Freq.} & \textbf{Horizon} & \textbf{$T$} & \textbf{$H$} \\
+\midrule
+HoT & 21 & 5 & 10 min & Short & 576 & 432 \\
+HoT & 21 & 5 & 10 min & Medium & 1920 & 1440 \\
+Kelmarsh & 6 & 12 & 10 min & Short & 576 & 432 \\
+Kelmarsh & 6 & 12 & 10 min & Medium & 1920 & 1440 \\
+SDWPF & 134 & 2 & 15 min & Short & 384 & 288 \\
+SDWPF & 134 & 2 & 15 min & Medium & 1280 & 960 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+PhyST-Net uses a 3-layer encoder, one decoder layer, hidden size 256, feed-forward size 512, eight attention heads, dropout 0.1, and Adam optimization. Training is capped at 50 epochs with early stopping patience 5 and gradient clipping at 1.0. The loss combines mean-squared prediction error with a high-output penalty weighted by 2.0 to emphasize rated-power operating regimes. For the full model, AGSP, R-STMF, and K-AMC are enabled throughout the main comparison. The ablation scripts keep the same data split, optimizer, horizon, and model width, changing only the target module switch.
+
+We compare PhyST-Net with strong recent time-series and spatio-temporal baselines, including TimeXer, CrossFormer, PatchTST, TiDE, iTransformer, Amplifier, DAG, GCGNet, DUET, TimeKAN, and CrossLinear. Models that do not natively consume exogenous wind variables are evaluated through the same historical-power and future-NWP protocol with a lightweight convolutional exogenous adapter, so that the comparison uses the same available information. The primary metrics are mean absolute error (MAE) and root mean square error (RMSE). Lower values indicate better predictive accuracy.
 
 \subsection{Main Results}
 \label{sec:main_results}
 
-Table~\ref{tab:main_results} summarizes the representative benchmark results. PhyST-Net obtains the best MAE in all selected settings and the best RMSE in four out of five settings. The gains are especially pronounced on Kelmarsh, where PhyST-Net reduces MAE by 30.99\% and 25.05\% over the strongest competing baseline in the medium- and short-term tasks, respectively. On SDWPF, the advantage remains consistent, with MAE reductions of 21.44\% and 14.06\% for the medium- and short-term tasks. On HoT medium-term forecasting, PhyST-Net also provides the lowest MAE, while TimeKAN remains close in RMSE. These results suggest that the proposed decomposition is most effective when the forecast must integrate non-local spatial effects and future exogenous conditions rather than relying only on near-term autoregressive continuity.
+Table~\ref{tab:main_results} summarizes the representative benchmark results. PhyST-Net obtains the best MAE in all selected settings and the best RMSE in four out of six settings. The gains are especially pronounced on Kelmarsh, where PhyST-Net reduces MAE by 30.99\% and 25.05\% over the strongest competing baseline in the medium- and short-term tasks, respectively. On SDWPF, the advantage remains consistent, with MAE reductions of 21.44\% and 14.06\% for the medium- and short-term tasks. On HoT, PhyST-Net provides the lowest MAE in both short- and medium-term forecasting, while DAG and TimeKAN remain close competitors in RMSE. These results suggest that the proposed decomposition is most effective when the forecast must integrate non-local spatial effects and future exogenous conditions rather than relying only on near-term autoregressive continuity.
 
 \begin{table*}[!t]
 \caption{Representative Forecasting Results on Strong Settings. Best results are in bold and second-best results are underlined.}
@@ -41,6 +68,7 @@ Table~\ref{tab:main_results} summarizes the representative benchmark results. Ph
  & & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE \\
 \midrule
 HoT & Medium & \textbf{267.32} & \textbf{468.23} & 377.48 & 556.27 & \underline{323.40} & 480.46 & 428.58 & 647.79 & 374.66 & 530.49 & 325.33 & \underline{477.37} \\
+HoT & Short & \textbf{258.55} & \underline{449.75} & 370.98 & 536.43 & 363.96 & 526.93 & 312.79 & 496.73 & \underline{276.90} & \textbf{445.89} & 343.95 & 501.63 \\
 Kelmarsh & Medium & \textbf{144.55} & \textbf{208.41} & 231.16 & 328.12 & 280.51 & 410.72 & \underline{209.45} & \underline{283.89} & 306.12 & 410.92 & 264.88 & 361.46 \\
 Kelmarsh & Short & \textbf{138.67} & \textbf{200.07} & 202.08 & 285.36 & 277.38 & 397.51 & 186.61 & \underline{273.30} & \underline{185.01} & 276.33 & 290.11 & 377.49 \\
 SDWPF & Medium & \textbf{129.85} & \textbf{215.72} & 198.01 & 281.86 & 185.61 & 256.27 & \underline{165.29} & \underline{233.61} & 167.78 & 246.62 & OOM & OOM \\
@@ -61,7 +89,7 @@ We conduct the ablation study on SDWPF short-term forecasting because it provide
 
 Table~\ref{tab:ablation_sdwpf_short} reports the full model and four controlled variants. The variant without AGSP replaces adaptive soft-windowed tokenization with the former discrete patching configuration. The variant without the fusion adapter replaces the manifold fusion pathway with a simplified latent aggregation. The variant without R-STMF removes the relational spatio-temporal manifold graph adapter. The variant without K-AMC replaces spline-based exogenous modulation with a weaker conditioning path.
 
-The full model achieves the best MAE, RMSE, and policy accuracy $\Lambda$. Removing AGSP increases RMSE by 1.25\%, confirming that adaptive continuous tokenization improves the temporal representation beyond the former discrete patching configuration. Removing only the fusion pathway causes a modest degradation, indicating that the backbone already captures part of the temporal signal. Removing R-STMF further increases RMSE, supporting the value of relational manifold propagation. The largest degradation occurs when K-AMC is removed: RMSE increases by 2.33\% and $\Lambda$ drops by 0.3527 percentage points, suggesting that non-linear future-exogenous conditioning is a key factor in the SDWPF short-term setting.
+The full model achieves the best MAE and RMSE. Removing AGSP increases RMSE by 1.25\%, confirming that adaptive continuous tokenization improves the temporal representation beyond the former discrete patching configuration. Removing only the fusion pathway causes a modest degradation, indicating that the backbone already captures part of the temporal signal. Removing R-STMF further increases RMSE, supporting the value of relational manifold propagation. The largest degradation occurs when K-AMC is removed: RMSE increases by 2.33\%, suggesting that non-linear future-exogenous conditioning is a key factor in the SDWPF short-term setting.
 
 \begin{table}[!t]
 \caption{Ablation Study on SDWPF Short-Term Forecasting.}
@@ -70,15 +98,15 @@ The full model achieves the best MAE, RMSE, and policy accuracy $\Lambda$. Remov
 \scriptsize
 \renewcommand{\arraystretch}{1.12}
 \setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$\Delta$RMSE} & \textbf{$\Lambda$ (\%)} \\
+\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$\Delta$RMSE} \\
 \midrule
-PhyST-Net & \textbf{123.139} & \textbf{201.834} & 0.00\% & \textbf{90.8948} \\
-w/o AGSP & 123.851 & 204.367 & +1.25\% & 90.7713 \\
-w/o fusion & 123.645 & 202.512 & +0.34\% & 90.8637 \\
-w/o R-STMF & 124.188 & 202.898 & +0.53\% & 90.8184 \\
-w/o K-AMC & 126.091 & 206.532 & +2.33\% & 90.5421 \\
+PhyST-Net & \textbf{123.139} & \textbf{201.834} & 0.00\% \\
+w/o AGSP & 123.851 & 204.367 & +1.25\% \\
+w/o fusion & 123.645 & 202.512 & +0.34\% \\
+w/o R-STMF & 124.188 & 202.898 & +0.53\% \\
+w/o K-AMC & 126.091 & 206.532 & +2.33\% \\
 \bottomrule
 \end{tabular}
 \end{table}
