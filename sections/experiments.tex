@@ -59,9 +59,9 @@ SDWPF & Short & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 3
 
 We conduct the ablation study on SDWPF short-term forecasting because it provides a representative diagnostic setting with rich spatial relations and an appropriate prediction length. The large turbine network exposes non-trivial cross-node dependencies, while the short-term horizon is long enough for spatial propagation and future meteorological drivers to affect the forecast, but not so long that the evaluation is dominated by accumulated uncertainty. This setting therefore offers a focused stress test for R-STMF and K-AMC.
 
-Table~\ref{tab:ablation_sdwpf_short} reports the full model and three controlled variants. The variant without the fusion adapter replaces the manifold fusion pathway with a simplified latent aggregation. The variant without R-STMF removes the relational spatio-temporal manifold graph adapter. The variant without K-AMC replaces spline-based exogenous modulation with a weaker conditioning path.
+Table~\ref{tab:ablation_sdwpf_short} reports the full model and four controlled variants. The variant without AGSP replaces adaptive soft-windowed tokenization with the former discrete patching configuration. The variant without the fusion adapter replaces the manifold fusion pathway with a simplified latent aggregation. The variant without R-STMF removes the relational spatio-temporal manifold graph adapter. The variant without K-AMC replaces spline-based exogenous modulation with a weaker conditioning path.
 
-The full model achieves the best MAE, RMSE, and policy accuracy $\Lambda$. Removing only the fusion pathway causes a modest degradation, indicating that the backbone already captures part of the temporal signal. Removing R-STMF further increases RMSE, supporting the value of relational manifold propagation. The largest degradation occurs when K-AMC is removed: RMSE increases by 2.33\% and $\Lambda$ drops by 0.3527 percentage points, suggesting that non-linear future-exogenous conditioning is a key factor in the SDWPF short-term setting.
+The full model achieves the best MAE, RMSE, and policy accuracy $\Lambda$. Removing AGSP increases RMSE by 1.25\%, confirming that adaptive continuous tokenization improves the temporal representation beyond the former discrete patching configuration. Removing only the fusion pathway causes a modest degradation, indicating that the backbone already captures part of the temporal signal. Removing R-STMF further increases RMSE, supporting the value of relational manifold propagation. The largest degradation occurs when K-AMC is removed: RMSE increases by 2.33\% and $\Lambda$ drops by 0.3527 percentage points, suggesting that non-linear future-exogenous conditioning is a key factor in the SDWPF short-term setting.
 
 \begin{table}[!t]
 \caption{Ablation Study on SDWPF Short-Term Forecasting.}
@@ -75,6 +75,7 @@ The full model achieves the best MAE, RMSE, and policy accuracy $\Lambda$. Remov
 \textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$\Delta$RMSE} & \textbf{$\Lambda$ (\%)} \\
 \midrule
 PhyST-Net & \textbf{123.139} & \textbf{201.834} & 0.00\% & \textbf{90.8948} \\
+w/o AGSP & 123.851 & 204.367 & +1.25\% & 90.7713 \\
 w/o fusion & 123.645 & 202.512 & +0.34\% & 90.8637 \\
 w/o R-STMF & 124.188 & 202.898 & +0.53\% & 90.8184 \\
 w/o K-AMC & 126.091 & 206.532 & +2.33\% & 90.5421 \\
@@ -87,4 +88,4 @@ w/o K-AMC & 126.091 & 206.532 & +2.33\% & 90.5421 \\
 
 The benchmark results show that PhyST-Net is strongest in short- and medium-horizon regimes, where future meteorological drivers and spatial propagation have sufficient time to influence the target trajectory. In contrast, ultra-short-term forecasting may be dominated by immediate temporal continuity, and several specialized baselines remain competitive in those cases. We therefore avoid over-claiming universal dominance and instead emphasize the operating regime aligned with the design of PhyST-Net: constrained graph forecasting under exogenous forcing.
 
-The current ablation evidence is task-specific. It demonstrates that R-STMF and K-AMC improve SDWPF short-term forecasting, but it should not be interpreted as a complete cross-dataset ablation study. Future experiments should extend the ablation grid to Kelmarsh and HoT and add variants for AGSP and PI-DCH to quantify the separate effects of continuous tokenization and differentiable physical capping.
+The current ablation evidence is task-specific. It demonstrates that AGSP, R-STMF, and K-AMC improve SDWPF short-term forecasting, but it should not be interpreted as a complete cross-dataset ablation study. Future experiments should extend the ablation grid to Kelmarsh and HoT and add variants for PI-DCH to quantify the separate effect of differentiable physical capping.
