@@ -47,32 +47,28 @@ Table~\ref{tab:main_results} summarizes the representative benchmark results. Ph
 \label{tab:main_results}
 \centering
 \scriptsize
-\renewcommand{\arraystretch}{1.12}
-\setlength{\tabcolsep}{3.0pt}
-\begin{tabular}{llcccccccccccc}
+\newcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{2.0pt}
+\begin{tabular}{llcccccccccccccccccccc}
 \toprule
-\multirow{2}{*}{\textbf{Dataset}} &
-\multirow{2}{*}{\textbf{Horizon}} &
-\multicolumn{2}{c}{\textbf{PhyST-Net}} &
-\multicolumn{2}{c}{\textbf{TimeXer}} &
-\multicolumn{2}{c}{\textbf{CrossFormer}} &
-\multicolumn{2}{c}{\textbf{TiDE}} &
-\multicolumn{2}{c}{\textbf{DAG}} &
-\multicolumn{2}{c}{\textbf{TimeKAN}} \\
+\textbf{Dataset} & \textbf{Horizon} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} \\
+ & & \multicolumn{2}{c}{\textbf{PhyST-Net}} & \multicolumn{2}{c}{\textbf{TimeXer}} & \multicolumn{2}{c}{\textbf{CrossFormer}} & \multicolumn{2}{c}{\textbf{PatchTST}} & \multicolumn{2}{c}{\textbf{iTransformer}} & \multicolumn{2}{c}{\textbf{Amplifier}} & \multicolumn{2}{c}{\textbf{DAG}} & \multicolumn{2}{c}{\textbf{DUET}} & \multicolumn{2}{c}{\textbf{TimeKAN}} \\
 \cmidrule(lr){3-4}
 \cmidrule(lr){5-6}
 \cmidrule(lr){7-8}
 \cmidrule(lr){9-10}
 \cmidrule(lr){11-12}
 \cmidrule(lr){13-14}
- & & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE & MAE & RMSE \\
+\cmidrule(lr){15-16}
+\cmidrule(lr){17-18}
+\cmidrule(lr){19-20}
 \midrule
-HoT & Medium & \textbf{267.32} & \textbf{468.23} & 377.48 & 556.27 & \underline{323.40} & 480.46 & 428.58 & 647.79 & 374.66 & 530.49 & 325.33 & \underline{477.37} \\
-HoT & Short & \textbf{258.55} & \underline{449.75} & 370.98 & 536.43 & 363.96 & 526.93 & 312.79 & 496.73 & \underline{276.90} & \textbf{445.89} & 343.95 & 501.63 \\
-Kelmarsh & Medium & \textbf{144.55} & \textbf{208.41} & 231.16 & 328.12 & 280.51 & 410.72 & \underline{209.45} & \underline{283.89} & 306.12 & 410.92 & 264.88 & 361.46 \\
-Kelmarsh & Short & \textbf{138.67} & \textbf{200.07} & 202.08 & 285.36 & 277.38 & 397.51 & 186.61 & \underline{273.30} & \underline{185.01} & 276.33 & 290.11 & 377.49 \\
-SDWPF & Medium & \textbf{129.85} & \textbf{215.72} & 198.01 & 281.86 & 185.61 & 256.27 & \underline{165.29} & \underline{233.61} & 167.78 & 246.62 & OOM & OOM \\
-SDWPF & Short & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 300.65 & 165.21 & 237.90 & \underline{146.96} & \underline{230.52} & 216.25 & 288.11 \\
+HoT & Medium & \textbf{267.32} & \textbf{468.23} & 377.48 & 556.27 & \underline{323.40} & 480.46 & 372.19 & 529.96 & 428.58 & 647.79 & 394.77 & 537.81 & 374.66 & 530.49 & 359.42 & 508.00 & 325.33 & \underline{477.37} \\
+HoT & Short & \textbf{258.55} & \underline{449.75} & 370.98 & 536.43 & 363.96 & 526.93 & 369.48 & 504.82 & 312.79 & 496.73 & 396.91 & 549.22 & \underline{276.90} & \textbf{445.89} & 363.62 & 509.49 & 343.95 & 501.63 \\
+Kelmarsh & Medium & \textbf{144.55} & \textbf{208.41} & 231.16 & 328.12 & 280.51 & 410.72 & 349.92 & 477.61 & \underline{209.45} & \underline{283.89} & 382.84 & 527.38 & 306.12 & 410.92 & 264.88 & 361.46 & 337.94 & 445.28 \\
+Kelmarsh & Short & \textbf{138.67} & \textbf{200.07} & 202.08 & 285.36 & 277.38 & 397.51 & 299.90 & 404.94 & 186.61 & \underline{273.30} & 348.30 & 475.12 & \underline{185.01} & 276.33 & 290.11 & 377.49 & 329.03 & 433.20 \\
+SDWPF & Medium & \textbf{129.85} & \textbf{215.72} & 198.01 & 281.86 & 185.61 & 256.27 & 249.13 & 325.73 & \underline{165.29} & \underline{233.61} & 246.56 & 350.77 & 167.78 & 246.62 & 195.13 & 277.77 & OOM & OOM \\
+SDWPF & Short & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 300.65 & 223.91 & 321.39 & 165.21 & 237.90 & 266.87 & 376.54 & \underline{146.96} & \underline{230.52} & 217.38 & 293.28 & 216.25 & 288.11 \\
 \bottomrule
 \end{tabular}
 \vspace{2pt}
