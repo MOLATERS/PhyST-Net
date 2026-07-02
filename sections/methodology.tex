@@ -27,50 +27,7 @@ Transformer-based forecasters conventionally mitigate sequence length by aggrega
 
 \begin{figure}[!t]
 \centering
-\begin{tikzpicture}[
-    font=\rmfamily\scriptsize,
-    >=Stealth,
-    x=1.3cm, y=1.3cm,
-    axis/.style={->, thick, draw=black!70},
-    signal/.style={gray!70, thick},
-    hard/.style={thick, fill opacity=0.15},
-    soft/.style={thick, fill opacity=0.25},
-    warn/.style={->, thick, draw=red!80!black},
-    note/.style={font=\tiny, align=center}
-]
-    % (a) Rigid
-    \begin{scope}[shift={(0, 2.1)}]
-        \node[anchor=south west, font=\bfseries\small] at (0, 1.1) {Traditional Non-overlapping Hard Patches};
-        \draw[axis] (0,0) -- (3.5,0) node[right] {Time $t$};
-        \draw[signal] plot[domain=0.2:3.2, samples=100] (\x,{0.4 + 0.2*sin(deg(2*\x)) + 0.08*sin(deg(12*\x))});
-        
-        \draw[blue!70!black, hard, fill=blue!20] (0.4, 0) rectangle (1.2, 0.85);
-        \draw[orange!85!black, hard, fill=orange!20] (1.2, 0) rectangle (2.0, 0.85);
-        \draw[green!60!black, hard, fill=green!20] (2.0, 0) rectangle (2.8, 0.85);
-        
-        \node[text=red!80!black, font=\bfseries\scriptsize, align=center] (art1) at (1.6, 1.15) {Temporal Discontinuity};
-        \draw[warn] (1.4, 1.05) -- (1.2, 0.9);
-        \draw[warn] (1.8, 1.05) -- (2.0, 0.9);
-    \end{scope}
-    
-    % (b) Soft
-    \begin{scope}[shift={(0, 0)}]
-        \node[anchor=south west, font=\bfseries\small] at (0, 1.1) {Proposed Adaptive Gaussian Soft Windows};
-        \draw[axis] (0,0) -- (3.5,0) node[right] {Time $t$};
-        \draw[signal] plot[domain=0.2:3.2, samples=100] (\x,{0.4 + 0.2*sin(deg(2*\x)) + 0.08*sin(deg(12*\x))});
-        
-        \path[fill=blue!30, draw=blue!80!black, soft] (0.2,0) plot[domain=0.2:1.8, samples=50] (\x,{0.85*exp(-((\x-1)^2)/0.15)}) -- (1.8,0) -- cycle;
-        \node[blue!80!black, font=\scriptsize] at (1.0, 0.35) {$\mu_1, \sigma_1$};
-        
-        \path[fill=orange!30, draw=orange!90!black, soft] (0.8,0) plot[domain=0.8:2.4, samples=50] (\x,{0.7*exp(-((\x-1.6)^2)/0.1)}) -- (2.4,0) -- cycle;
-        \node[orange!90!black, font=\scriptsize] at (1.6, 0.25) {$\mu_2, \sigma_2$};
-        
-        \path[fill=green!30, draw=green!60!black, soft] (1.4,0) plot[domain=1.4:3.0, samples=50] (\x,{0.95*exp(-((\x-2.2)^2)/0.2)}) -- (3.0,0) -- cycle;
-        \node[green!60!black, font=\scriptsize] at (2.2, 0.45) {$\mu_3, \sigma_3$};
-        
-        \node[anchor=north, font=\scriptsize, text=black!80] at (1.6, -0.2) {$\sum_i \tilde{W}_i(\tau) = 1$};
-    \end{scope}
-\end{tikzpicture}
+\includegraphics[width=\linewidth]{figures/AGSP.pdf}
 \caption{Mechanics of AGSP. By replacing discrete sequence chunking with continuous, differentiable density windows, the model autonomously mitigates boundary artifacts and preserves temporal continuity. Each soft window is parameterized by a learnable center $\mu_i$ and bandwidth $\sigma_i$, with overlapping weights dynamically normalized.}
 \label{fig:agsp_detail}
 \end{figure}

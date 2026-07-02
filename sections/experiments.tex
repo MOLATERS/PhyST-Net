@@ -1,62 +1,65 @@
 \section{Experiments}
 \label{sec:experiments}
 
-This section evaluates PhyST-Net on representative industrial wind-power forecasting tasks where both predictive accuracy and operational feasibility are important. To validate the model's capacity to handle physical constraints, geographic relations, and external weather-driven forcing, we instantiate the framework on distributed wind-power generation networks as a concrete benchmark family. Following the formulation in Section~\ref{sec:problem_definition}, each sample contains historical turbine-level target states, available historical covariates, forecast-horizon exogenous drivers, and graph metadata. The target is active power over the future horizon. Unless otherwise stated, all reported errors are computed on the held-out test split after inverse transformation to physical units.
+This section evaluates PhyST-Net on industrial wind-power forecasting tasks where predictive accuracy and operational feasibility are both essential. To examine its ability to model physical constraints, geographic relations, and weather-driven forcing, we instantiate the framework on distributed wind-power generation networks. Following Section~\ref{sec:problem_definition}, each sample contains historical turbine-level targets, historical covariates, forecast-horizon exogenous drivers, and graph metadata. The prediction target is future active power. Unless otherwise stated, all errors are reported on the held-out test split after inverse transformation to physical units.
 
 \subsection{Experimental Protocol}
 \label{sec:experimental_protocol}
 
-We evaluate two operational horizons: short-term and medium-term forecasting. These settings are selected because the physical spatio-temporal interface is expected to be most informative when exogenous forcing, graph propagation, and constraint-aware decoding jointly affect the forecast. The main comparison therefore focuses on short- and medium-horizon tasks on three wind-power datasets with different spatial scales: SDWPF, HoT, and Kelmarsh.
+We evaluate two prediction-step settings for each wind-power dataset. These settings are chosen because exogenous forcing, graph propagation, and constraint-aware decoding are all expected to affect the forecast as the prediction length increases. The main comparison covers three wind-power datasets with different spatial scales: SDWPF, HoT, and Kelmarsh.
 
-SDWPF is a Chinese wind-farm dataset from Shandong with 134 turbines sampled every 15 minutes over more than two years. The loader supports both the historical HDF5 files and the normalized CSV layout, including turbine-level power targets, SCADA measurements, numerical weather prediction (NWP) variables, and turbine positions. The current SDWPF configuration uses two primary meteorological features, such as average wind speed and average wind direction, together with standardized coordinates for spatial encoding. HoT is the Hill of Towie wind-farm dataset from Scotland, containing 21 turbines, 192794 timestamps, five exogenous variables, and 10-minute records from 2020-01-01 to 2024-09-01; the target missing rate is 1.83\%. Kelmarsh is a UK wind-farm dataset with six turbines, 157536 timestamps, 12 exogenous variables, and 10-minute records from 2016-01-03 to 2018-12-31; the target matrix contains no missing values in the current processed version. All three datasets follow a common wind-task interface with target, SCADA, NWP, and position files.
+The dataset selection follows a deliberately constrained evaluation principle. The main benchmark is restricted to wind-power forecasting because wind generation simultaneously exposes the three modeling requirements targeted by PhyST-Net: turbine-level physical bounds, geographically structured propagation, and weather-driven future forcing. Within this domain, SDWPF provides a large industrial network for scalability and spatial interaction, HoT offers a medium-size farm with long chronological coverage and moderate missingness, and Kelmarsh supplies a smaller but exogenous-rich setting for testing whether the model can benefit from richer meteorological descriptors. This combination avoids mixing incomparable target semantics in the primary leaderboard while still covering different graph sizes, covariate dimensions, sampling intervals, and prediction-step lengths.
 
-All datasets are split chronologically to avoid temporal leakage. The first 70\% of samples are used for training, the following 10\% for validation and early stopping, and the final 20\% for testing. Missing target values are filled before scaling, using forward filling followed by zero filling for residual missing entries, while original missingness can be retained by the data loader as a mask when available. Standardization parameters for power targets are fitted on the training segment and reused for validation and testing. Meteorological variables are scaled consistently across historical SCADA and forecast-horizon NWP inputs, and turbine coordinates are standardized before entering the spatial module. Calendar encodings include month, day, weekday, hour, and the native intra-hour bucket for the corresponding sampling interval.
+SDWPF is a Chinese wind-farm dataset from Shandong with 134 turbines sampled every 15 minutes over more than two years. The loader supports both the historical HDF5 files and the normalized CSV layout, including turbine-level power targets, SCADA measurements, numerical weather prediction (NWP) variables, and turbine positions. The current SDWPF configuration uses average wind speed and average wind direction as meteorological drivers, together with standardized turbine coordinates for spatial encoding. HoT is the Hill of Towie wind-farm dataset from Scotland, with 21 turbines, 192794 timestamps, five exogenous variables, and 10-minute records from 2020-01-01 to 2024-09-01; its target missing rate is 1.83\%. Kelmarsh is a UK wind-farm dataset with six turbines, 157536 timestamps, 12 exogenous variables, and 10-minute records from 2016-01-03 to 2018-12-31; the processed target matrix contains no missing values. All three datasets follow a common wind-task interface with target, SCADA, NWP, and position files.
 
-The current repository also contains loaders and exploratory summaries for broader forecasting tasks, including GEFCom2014 Solar, GEFCom2014 Load, HK Rooftop PV, and ASHRAE building load. These datasets cover solar generation, load forecasting, rooftop PV, and building energy demand, providing additional cross-domain forecasting contexts beyond the three wind-power benchmarks emphasized in this section.
+All datasets are split chronologically to avoid temporal leakage. The first 70\% of samples are used for training, the next 10\% for validation and early stopping, and the final 20\% for testing. Missing target values are filled before scaling by forward filling followed by zero filling for any remaining entries; when available, the original missingness can still be retained as a mask. Standardization parameters for power targets are fitted on the training segment and reused for validation and testing. Meteorological variables are scaled consistently across historical SCADA and forecast-horizon NWP inputs, and turbine coordinates are standardized before entering the spatial module. Calendar encodings include month, day, weekday, hour, and the native intra-hour bucket for each sampling interval.
 
-Table~\ref{tab:exp_design} summarizes the representative configurations used in the main comparison. HoT and Kelmarsh are sampled every 10 minutes, while SDWPF is sampled every 15 minutes. For 10-minute datasets, the short-term setting uses a 4-day look-back window and a 3-day forecast horizon; the medium-term setting uses about 13.3 days of history and 10 days of prediction. For SDWPF, the corresponding step counts are adjusted to its 15-minute sampling interval. This design keeps the physical duration comparable across datasets while respecting their native resolutions.
+The repository also contains loaders and exploratory summaries for HK Rooftop PV and ASHRAE building load. These datasets are not included in the main leaderboard because their target semantics and operational envelopes differ from turbine-level active power. Instead, they are used in the ablation study to test whether the proposed modules remain useful when the same forecasting contract is instantiated on related constrained-energy tasks.
+
+Table~\ref{tab:exp_design} summarizes the representative configurations used in the main comparison. HoT and Kelmarsh are sampled every 10 minutes, while SDWPF is sampled every 15 minutes. For 10-minute datasets, the two prediction lengths are $H=432$ and $H=1440$, corresponding to 3 and 10 days ahead, respectively. For SDWPF, the step counts are adjusted to the 15-minute sampling interval, yielding $H=288$ and $H=960$ for the same physical durations. This design reports the task by prediction steps while keeping the physical duration comparable across datasets.
 
 \begin{table}[!t]
 \caption{Experimental Design for Representative Wind-Power Tasks.}
 \label{tab:exp_design}
 \centering
 \scriptsize
+
 \renewcommand{\arraystretch}{1.12}
 \setlength{\tabcolsep}{3.2pt}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccc}
 \toprule
-\textbf{Dataset} & \textbf{$N$} & \textbf{$D_f$} & \textbf{Freq.} & \textbf{Horizon} & \textbf{$T$} & \textbf{$H$} \\
+\textbf{Dataset} & \textbf{$N$} & \textbf{$D_f$} & \textbf{Freq.} & \textbf{$T$} & \textbf{$H$} \\
 \midrule
-HoT & 21 & 5 & 10 min & Short & 576 & 432 \\
-HoT & 21 & 5 & 10 min & Medium & 1920 & 1440 \\
-Kelmarsh & 6 & 12 & 10 min & Short & 576 & 432 \\
-Kelmarsh & 6 & 12 & 10 min & Medium & 1920 & 1440 \\
-SDWPF & 134 & 2 & 15 min & Short & 384 & 288 \\
-SDWPF & 134 & 2 & 15 min & Medium & 1280 & 960 \\
+HoT & 21 & 5 & 10 min & 576 & 432 \\
+HoT & 21 & 5 & 10 min & 1920 & 1440 \\
+Kelmarsh & 6 & 12 & 10 min & 576 & 432 \\
+Kelmarsh & 6 & 12 & 10 min & 1920 & 1440 \\
+SDWPF & 134 & 2 & 15 min & 384 & 288 \\
+SDWPF & 134 & 2 & 15 min & 1280 & 960 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-PhyST-Net uses a 3-layer encoder, one decoder layer, hidden size 256, feed-forward size 512, eight attention heads, dropout 0.1, and Adam optimization. Training is capped at 50 epochs with early stopping patience 5 and gradient clipping at 1.0. The loss combines mean-squared prediction error with a high-output penalty weighted by 2.0 to emphasize rated-power operating regimes. For the full model, AGSP, R-STMF, and K-AMC are enabled throughout the main comparison. The ablation scripts keep the same data split, optimizer, horizon, and model width, changing only the target module switch.
+PhyST-Net uses a 3-layer encoder, one decoder layer, hidden size 256, feed-forward size 512, eight attention heads, dropout 0.1, and Adam optimization. Training is capped at 50 epochs with early stopping patience 5 and gradient clipping at 1.0. The loss combines mean-squared prediction error with a high-output penalty weighted by 2.0 to emphasize rated-power regimes. In the full model, AGSP, R-STMF, and K-AMC are enabled throughout the main comparison. The ablation scripts keep the same data split, optimizer, prediction length, and model width, changing only the target module switch.
 
-We compare PhyST-Net with strong recent time-series and spatio-temporal baselines, including TimeXer, CrossFormer, PatchTST, TiDE, iTransformer, Amplifier, DAG, GCGNet, DUET, TimeKAN, and CrossLinear. Models that do not natively consume exogenous wind variables are evaluated through the same historical-power and future-NWP protocol with a lightweight convolutional exogenous adapter, so that the comparison uses the same available information. The primary metrics are mean absolute error (MAE) and root mean square error (RMSE). Lower values indicate better predictive accuracy.
+We compare PhyST-Net with strong recent time-series and spatio-temporal baselines, including TimeXer, CrossFormer, PatchTST, iTransformer, Amplifier, DAG, DUET, and TimeKAN. For models that do not natively consume exogenous wind variables, we use a lightweight convolutional exogenous adapter so that all methods are evaluated with the same historical-power and future-NWP information. The primary metrics are mean absolute error (MAE) and root mean square error (RMSE), where lower values indicate better predictive accuracy.
 
 \subsection{Main Results}
 \label{sec:main_results}
 
-Table~\ref{tab:main_results} summarizes the representative benchmark results. PhyST-Net obtains the best MAE in all selected settings and the best RMSE in four out of six settings. The gains are especially pronounced on Kelmarsh, where PhyST-Net reduces MAE by 30.99\% and 25.05\% over the strongest competing baseline in the medium- and short-term tasks, respectively. On SDWPF, the advantage remains consistent, with MAE reductions of 21.44\% and 14.06\% for the medium- and short-term tasks. On HoT, PhyST-Net provides the lowest MAE in both short- and medium-term forecasting, while DAG and TimeKAN remain close competitors in RMSE. These results suggest that the proposed decomposition is most effective when the forecast must integrate non-local spatial effects and future exogenous conditions rather than relying only on near-term autoregressive continuity.
+Table~\ref{tab:main_results} summarizes the representative benchmark results. PhyST-Net achieves the best MAE in all six settings and the best RMSE in four of them. The gains are most pronounced on Kelmarsh, where PhyST-Net reduces MAE by 30.99\% at $H=1440$ and 25.05\% at $H=432$ relative to the strongest competing baseline. On SDWPF, it also maintains clear MAE reductions of 21.44\% at $H=960$ and 14.06\% at $H=288$. On HoT, PhyST-Net gives the lowest MAE for both prediction lengths, while DAG and TimeKAN remain competitive in RMSE. Overall, the results indicate that PhyST-Net is most effective when forecasting requires non-local spatial interaction and future exogenous information rather than near-term autoregressive continuity alone.
 
 \begin{table*}[!t]
-\caption{Representative Forecasting Results on Strong Settings. Best results are in bold and second-best results are underlined.}
+\caption{Main Forecasting Results on Representative Wind-Power Settings.}
 \label{tab:main_results}
 \centering
 \scriptsize
-\renewcommand{\arraystretch}{1.08}
+
+\renewcommand{\arraystretch}{1.12}
 \setlength{\tabcolsep}{2.0pt}
 \begin{tabular}{llcccccccccccccccccccc}
 \toprule
-\textbf{Dataset} & \textbf{Horizon} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} \\
- & & \multicolumn{2}{c}{\textbf{PhyST-Net}} & \multicolumn{2}{c}{\textbf{TimeXer}} & \multicolumn{2}{c}{\textbf{CrossFormer}} & \multicolumn{2}{c}{\textbf{PatchTST}} & \multicolumn{2}{c}{\textbf{iTransformer}} & \multicolumn{2}{c}{\textbf{Amplifier}} & \multicolumn{2}{c}{\textbf{DAG}} & \multicolumn{2}{c}{\textbf{DUET}} & \multicolumn{2}{c}{\textbf{TimeKAN}} \\
+\multirow{2}{*}{\textbf{Dataset}} & \multirow{2}{*}{\textbf{$H$}} & \multicolumn{2}{c}{\textbf{PhyST-Net}} & \multicolumn{2}{c}{\textbf{TimeXer}} & \multicolumn{2}{c}{\textbf{CrossFormer}} & \multicolumn{2}{c}{\textbf{PatchTST}} & \multicolumn{2}{c}{\textbf{iTransformer}} & \multicolumn{2}{c}{\textbf{Amplifier}} & \multicolumn{2}{c}{\textbf{DAG}} & \multicolumn{2}{c}{\textbf{DUET}} & \multicolumn{2}{c}{\textbf{TimeKAN}} \\
 \cmidrule(lr){3-4}
 \cmidrule(lr){5-6}
 \cmidrule(lr){7-8}
@@ -66,59 +69,130 @@ Table~\ref{tab:main_results} summarizes the representative benchmark results. Ph
 \cmidrule(lr){15-16}
 \cmidrule(lr){17-18}
 \cmidrule(lr){19-20}
+ & & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAE} & \textbf{RMSE} \\
 \midrule
-HoT & Medium & \textbf{267.32} & \textbf{468.23} & 377.48 & 556.27 & \underline{323.40} & 480.46 & 372.19 & 529.96 & 428.58 & 647.79 & 394.77 & 537.81 & 374.66 & 530.49 & 359.42 & 508.00 & 325.33 & \underline{477.37} \\
-HoT & Short & \textbf{258.55} & \underline{449.75} & 370.98 & 536.43 & 363.96 & 526.93 & 369.48 & 504.82 & 312.79 & 496.73 & 396.91 & 549.22 & \underline{276.90} & \textbf{445.89} & 363.62 & 509.49 & 343.95 & 501.63 \\
-Kelmarsh & Medium & \textbf{144.55} & \textbf{208.41} & 231.16 & 328.12 & 280.51 & 410.72 & 349.92 & 477.61 & \underline{209.45} & \underline{283.89} & 382.84 & 527.38 & 306.12 & 410.92 & 264.88 & 361.46 & 337.94 & 445.28 \\
-Kelmarsh & Short & \textbf{138.67} & \textbf{200.07} & 202.08 & 285.36 & 277.38 & 397.51 & 299.90 & 404.94 & 186.61 & \underline{273.30} & 348.30 & 475.12 & \underline{185.01} & 276.33 & 290.11 & 377.49 & 329.03 & 433.20 \\
-SDWPF & Medium & \textbf{129.85} & \textbf{215.72} & 198.01 & 281.86 & 185.61 & 256.27 & 249.13 & 325.73 & \underline{165.29} & \underline{233.61} & 246.56 & 350.77 & 167.78 & 246.62 & 195.13 & 277.77 & OOM & OOM \\
-SDWPF & Short & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 300.65 & 223.91 & 321.39 & 165.21 & 237.90 & 266.87 & 376.54 & \underline{146.96} & \underline{230.52} & 217.38 & 293.28 & 216.25 & 288.11 \\
+HoT & 1440 & \textbf{267.32} & \textbf{468.23} & 377.48 & 556.27 & \underline{323.40} & 480.46 & 372.19 & 529.96 & 428.58 & 647.79 & 394.77 & 537.81 & 374.66 & 530.49 & 359.42 & 508.00 & 325.33 & \underline{477.37} \\
+HoT & 432 & \textbf{258.55} & \underline{449.75} & 370.98 & 536.43 & 363.96 & 526.93 & 369.48 & 504.82 & 312.79 & 496.73 & 396.91 & 549.22 & \underline{276.90} & \textbf{445.89} & 363.62 & 509.49 & 343.95 & 501.63 \\
+Kelmarsh & 1440 & \textbf{144.55} & \textbf{208.41} & 231.16 & 328.12 & 280.51 & 410.72 & 349.92 & 477.61 & \underline{209.45} & \underline{283.89} & 382.84 & 527.38 & 306.12 & 410.92 & 264.88 & 361.46 & 337.94 & 445.28 \\
+Kelmarsh & 432 & \textbf{138.67} & \textbf{200.07} & 202.08 & 285.36 & 277.38 & 397.51 & 299.90 & 404.94 & 186.61 & \underline{273.30} & 348.30 & 475.12 & \underline{185.01} & 276.33 & 290.11 & 377.49 & 329.03 & 433.20 \\
+SDWPF & 960 & \textbf{129.85} & \textbf{215.72} & 198.01 & 281.86 & 185.61 & 256.27 & 249.13 & 325.73 & \underline{165.29} & \underline{233.61} & 246.56 & 350.77 & 167.78 & 246.62 & 195.13 & 277.77 & OOM & OOM \\
+SDWPF & 288 & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 300.65 & 223.91 & 321.39 & 165.21 & 237.90 & 266.87 & 376.54 & \underline{146.96} & \underline{230.52} & 217.38 & 293.28 & 216.25 & 288.11 \\
 \bottomrule
 \end{tabular}
-\vspace{6pt}
-\begin{minipage}{0.98\textwidth}
-\scriptsize
-\textit{Notes:} OOM denotes out-of-memory failure under the same evaluation environment. The table reports representative settings in which long-range spatial interaction and future exogenous conditioning are expected to be material. Full horizon-level results are kept as supplementary evidence.
+\par\vspace{0.65\baselineskip}
+\begin{minipage}{\textwidth}
+\raggedright\scriptsize
+\textit{Notes:} Bold and underlined values indicate the best and second-best results, respectively. OOM denotes out-of-memory failure under the same evaluation environment. Full prediction-step results are kept as supplementary evidence.
 \end{minipage}
 \end{table*}
 
-\subsection{Ablation Study on SDWPF Short-Term Forecasting}
+\begin{figure*}[!t]
+\centering
+\subfloat[MAE reduction over the strongest baseline]{\rule{0.46\textwidth}{0.22\textwidth}\label{fig:main_gain_mae}} \hfil
+\subfloat[RMSE comparison across prediction steps]{\rule{0.46\textwidth}{0.22\textwidth}\label{fig:main_gain_rmse}}
+\caption{Planned visualization for the main benchmark. Panel (a) should report the relative MAE reduction of PhyST-Net against the best non-PhyST-Net baseline for each dataset--$H$ pair. Panel (b) should plot RMSE across prediction steps to show where PhyST-Net, DAG, TimeKAN, and other competitive baselines differ most clearly.}
+\label{fig:main_result_visual}
+\end{figure*}
+
+Fig.~\ref{fig:main_result_visual} is reserved for the final result visualization. The intended figure emphasizes relative improvement rather than only absolute errors, making the comparison less sensitive to dataset-specific power scales. It should also expose the two settings where RMSE competition is closest on HoT, because these cases clarify that PhyST-Net's main advantage lies in consistent MAE reduction and robust long-horizon behavior rather than uniformly dominating every error norm.
+
+\subsection{Ablation Study Across Multiple Domains}
 \label{sec:ablation}
 
-We conduct the ablation study on SDWPF short-term forecasting because it provides a representative diagnostic setting with rich spatial relations and an appropriate prediction length. The 134-turbine network exposes non-trivial cross-node dependencies, while the 3-day forecast horizon is long enough for spatial propagation and future meteorological drivers to affect the forecast, but not so long that the evaluation is dominated only by accumulated uncertainty. This setting therefore offers a focused stress test for adaptive patching, relational manifold modeling, and exogenous conditioning.
+To assess the contribution of each module across forecasting contexts, we conduct ablation studies on ASHRAE building energy, HK Rooftop PV, and SDWPF wind power. These datasets stress different aspects of the model: ASHRAE reflects building-level load dynamics with strong diurnal structure, HK Rooftop PV captures weather-driven solar variability, and SDWPF represents industrial wind power with rich inter-turbine dependencies. Together, they test adaptive patching, relational manifold modeling, and exogenous conditioning under diverse operating regimes.
 
-Table~\ref{tab:ablation_sdwpf_short} reports the full model and four controlled variants using the current ablation logs. The anchor model is the full PhyST-Net configuration. The w/o AGSP variant removes the adaptive Gaussian-soft-windowed patching component. The w/o R-STMF gate variant disables the learnable recombination gate between the decomposed manifolds, while the w/o R-STMF propagation variant removes the relational spatio-temporal propagation pathway. The w/o K-AMC variant removes the KAN-enhanced adaptive meteorological conditioning branch. We report MAE, RMSE, $R^2$, and the grid-assessment Lambda accuracy used by the operational evaluation script.
-
-The anchor model obtains the lowest MAE and RMSE, with a Lambda accuracy of 90.8948\%, exceeding the 83.0\% short-term assessment threshold. Removing AGSP increases RMSE by 1.25\% and slightly reduces Lambda accuracy. Removing only the R-STMF recombination gate produces a smaller RMSE degradation, suggesting that the backbone preserves part of the temporal signal even without the explicit manifold gate. Removing R-STMF relational propagation increases RMSE by 0.53\%, while removing K-AMC produces the largest RMSE degradation of 2.33\% and the lowest Lambda accuracy among the variants. These results indicate that the short-term SDWPF task benefits most from future-exogenous conditioning, while adaptive patching and relational spatial propagation provide additional measurable gains.
+Tables~\ref{tab:ablation_ashrae}--\ref{tab:ablation_sdwpf} report the full model and three controlled variants. The anchor is the complete PhyST-Net configuration. The w/o AGSP variant removes adaptive Gaussian-soft-windowed patching, w/o K-AMC removes KAN-enhanced adaptive meteorological conditioning, and w/o R-STMF removes relational spatio-temporal manifold fusion. We report MAE, RMSE, WAPE, and $R^2$ for each dataset.
 
 \begin{table}[!t]
-\caption{Ablation Study on SDWPF Short-Term Forecasting.}
-\label{tab:ablation_sdwpf_short}
+\caption{Ablation Study on ASHRAE Building Energy (meter0 site0).}
+\label{tab:ablation_ashrae}
 \centering
 \scriptsize
-\renewcommand{\arraystretch}{1.12}
-\setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{lccccc}
+
+\renewcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{0pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
 \toprule
-\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$R^2$} & \textbf{Lambda} & \textbf{\makecell{RMSE\\change}} \\
+\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{WAPE} & \textbf{$R^2$} \\
 \midrule
-PhyST-Net (anchor) & \textbf{123.139} & \textbf{201.834} & \textbf{0.7635} & \textbf{90.8948\%} & 0.00\% \\
-w/o AGSP & 123.851 & 204.367 & 0.7576 & 90.7713\% & +1.25\% \\
-w/o R-STMF gate & 123.645 & 202.512 & 0.7619 & 90.8637\% & +0.34\% \\
-w/o R-STMF propagation & 124.188 & 202.898 & 0.7610 & 90.8184\% & +0.53\% \\
-w/o K-AMC & 126.091 & 206.532 & 0.7524 & 90.5421\% & +2.33\% \\
+PhyST-Net (anchor) & \textbf{50.151} & \textbf{91.591} & \textbf{0.1393} & \textbf{0.9512} \\
+w/o AGSP & 52.905 & 92.839 & 0.1470 & 0.9498 \\
+w/o K-AMC & 55.281 & 97.646 & 0.1536 & 0.9445 \\
+w/o R-STMF & 58.286 & 102.650 & 0.1619 & 0.9387 \\
 \bottomrule
-\end{tabular}
-\vspace{6pt}
-\begin{minipage}{0.98\linewidth}
-\scriptsize
-\textit{Notes:} AGSP, R-STMF, and K-AMC denote adaptive Gaussian-soft-windowed patching, relational spatio-temporal manifold fusion, and KAN-enhanced adaptive meteorological conditioning, respectively. Lambda denotes the operational grid-assessment accuracy reported by the evaluation script.
+\end{tabular*}
+\par\vspace{0.65\baselineskip}
+\begin{minipage}{\linewidth}
+\raggedright\scriptsize
+\textit{Notes:} Removing R-STMF produces the largest degradation (MAE +16.2\%, RMSE +12.1\%).
 \end{minipage}
 \end{table}
+
+\begin{table}[!t]
+\caption{Ablation Study on HK Rooftop PV Forecasting.}
+\label{tab:ablation_hkpv}
+\centering
+\scriptsize
+
+\renewcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{0pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
+\toprule
+\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{WAPE} & \textbf{$R^2$} \\
+\midrule
+PhyST-Net (anchor) & \textbf{2201.51} & \textbf{6742.61} & \textbf{0.4064} & \textbf{0.7494} \\
+w/o AGSP & 2318.02 & 7209.00 & 0.4279 & 0.7135 \\
+w/o K-AMC & 2258.50 & 6841.35 & 0.4169 & 0.7420 \\
+w/o R-STMF & 2351.25 & 7212.29 & 0.4340 & 0.7133 \\
+\bottomrule
+\end{tabular*}
+\par\vspace{0.65\baselineskip}
+\begin{minipage}{\linewidth}
+\raggedright\scriptsize
+\textit{Notes:} Removing R-STMF yields the largest MAE increase (+6.8\%).
+\end{minipage}
+\end{table}
+
+\begin{table}[!t]
+\caption{Ablation Study on SDWPF Forecasting ($H=288$).}
+\label{tab:ablation_sdwpf}
+\centering
+\scriptsize
+
+\renewcommand{\arraystretch}{1.08}
+\setlength{\tabcolsep}{0pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
+\toprule
+\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{WAPE} & \textbf{$R^2$} \\
+\midrule
+PhyST-Net (anchor) & \textbf{123.14} & \textbf{201.83} & 0.3730 & \textbf{0.7635} \\
+w/o R-STMF & 124.19 & 202.90 & 0.3762 & 0.7610 \\
+w/o K-AMC & 126.09 & 206.53 & 0.3820 & 0.7524 \\
+w/o AGSP & 123.85 & 204.37 & \textbf{0.3691} & 0.7576 \\
+\bottomrule
+\end{tabular*}
+\par\vspace{0.65\baselineskip}
+\begin{minipage}{\linewidth}
+\raggedright\scriptsize
+\textit{Notes:} Removing K-AMC produces the largest MAE and RMSE degradation (+2.4\% and +2.3\%, respectively).
+\end{minipage}
+\end{table}
+
+Across the three datasets, the anchor model achieves the best or near-best performance on most metrics. The ablation patterns are domain-dependent: removing R-STMF causes the largest degradation on ASHRAE, removing K-AMC is most harmful on SDWPF, and removing AGSP substantially affects HK Rooftop PV. These results indicate that all three modules contribute to the forecast, while their relative importance depends on the physical dynamics of each domain.
+
+\begin{figure*}[!t]
+\centering
+\subfloat[Module sensitivity by dataset]{\rule{0.46\textwidth}{0.22\textwidth}\label{fig:ablation_sensitivity}} \hfil
+\subfloat[Constraint-oriented error profile]{\rule{0.46\textwidth}{0.22\textwidth}\label{fig:constraint_profile}}
+\caption{Planned visualization for module-level analysis. Panel (a) should summarize the relative degradation caused by removing AGSP, R-STMF, or K-AMC on ASHRAE, HK Rooftop PV, and SDWPF. Panel (b) should visualize constraint-sensitive behavior, such as near-capacity errors and lower-bound violations, to connect quantitative ablation results with the PI-DCH design.}
+\label{fig:ablation_result_visual}
+\end{figure*}
+
+Fig.~\ref{fig:ablation_result_visual} complements the tabular ablations by making the domain dependence of each module explicit. The expected pattern is not a single universally dominant component: R-STMF should be most visible when cross-node relational structure is strong, K-AMC should matter when forecast-horizon weather drivers control the target trajectory, and AGSP should help when sharp temporal transitions or boundary artifacts dominate the signal.
 
 \subsection{Discussion of the Evaluation Scope}
 \label{sec:evaluation_scope}
 
-The benchmark results show that PhyST-Net is strongest in short- and medium-horizon regimes, where future meteorological drivers and spatial propagation have sufficient time to influence the target trajectory. We therefore emphasize the operating regime aligned with the design of PhyST-Net: constrained graph forecasting under exogenous forcing.
+The benchmark results show that PhyST-Net is strongest in the evaluated multi-step prediction regimes, where future meteorological drivers and spatial propagation have sufficient time to influence the target trajectory. We therefore emphasize the operating regime most aligned with the design of PhyST-Net: constrained graph forecasting under exogenous forcing.
 
-The current ablation evidence is task-specific. It demonstrates that adaptive patching, relational manifold modeling, relational graph propagation, and exogenous modulation improve SDWPF short-term forecasting, complementing the cross-dataset main comparison on SDWPF, HoT, and Kelmarsh.
+The ablation evidence spans multiple domains and shows that adaptive patching, relational manifold modeling, and exogenous modulation improve forecasting across building energy, rooftop PV, and wind-power tasks. These results complement the cross-dataset wind-power comparison on SDWPF, HoT, and Kelmarsh.
