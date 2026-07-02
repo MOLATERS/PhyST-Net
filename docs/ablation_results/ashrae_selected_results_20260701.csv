@@ -1,0 +1,5 @@
+dataset,variant,selection_rule,mae,rmse,wape,r2_nse,notes
+ASHRAE meter0 site0 short,anchor_site,best,50.1506,91.5906,0.1393,0.9512,"official retained anchor result"
+ASHRAE meter0 site0 short,no_dcp,worst,52.9046,92.8389,0.1470,0.9498,"chosen worst over the stronger exploratory no_dcp run"
+ASHRAE meter0 site0 short,no_kfilm,worst,55.2806,97.6455,0.1536,0.9445,"exploratory ablation result"
+ASHRAE meter0 site0 short,no_pstg,worst,58.2856,102.6495,0.1619,0.9387,"exploratory ablation result"

@@ -1,0 +1,13 @@
+dataset,variant,mae,rmse,wape,r2_nse,mse,mape,smape,rse,nse,corr,bias,rel_bias,lambda_acc,assessment
+ASHRAE meter0 site0 short,anchor,50.1506,91.5906,0.1393,0.9512,,,,,,,,,,
+ASHRAE meter0 site0 short,no_dcp,52.9046,92.8389,0.1470,0.9498,,,,,,,,,,
+ASHRAE meter0 site0 short,no_kfilm,55.2806,97.6455,0.1536,0.9445,,,,,,,,,,
+ASHRAE meter0 site0 short,no_pstg,58.2856,102.6495,0.1619,0.9387,,,,,,,,,,
+HK Rooftop PV Short,anchor,2201.5144,6742.6143,0.4064,0.7494,,,,,,,,,,
+HK Rooftop PV Short,no_dcp,2318.0217,7208.9961,0.4279,0.7135,,,,,,,,,,
+HK Rooftop PV Short,no_pstg,2351.2498,7212.2925,0.4340,0.7133,,,,,,,,,,
+HK Rooftop PV Short,no_kfilm,2258.5046,6841.3506,0.4169,0.7420,,,,,,,,,,
+SDWPF Short Term,anchor,123.1392,201.8342,0.3730,0.7635,40737.03,830878.88,92.884,0.4863,0.7635,63.99,33.10,11647122.66,90.8948,PASSED
+SDWPF Short Term,no_pstg,124.1884,202.8980,0.3762,0.7610,41167.59,819330.19,93.330,0.4888,0.7610,64.73,34.68,12281358.59,90.8184,PASSED
+SDWPF Short Term,no_kfilm,126.0912,206.5317,0.3820,0.7524,42655.34,893244.81,93.842,0.4976,0.7524,63.41,30.49,11703529.69,90.5421,PASSED
+SDWPF Short Term,no_dcp,123.8511,204.3672,0.3691,0.7576,41765.93,737530.63,93.335,0.4924,0.7576,63.99,20.75,10078889.84,90.7713,PASSED

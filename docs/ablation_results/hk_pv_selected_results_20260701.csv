@@ -1,0 +1,5 @@
+dataset,variant,selection_rule,run_id,mae,rmse,wape,r2_nse,notes
+HK Rooftop PV Short,anchor,best,ABLA_HKRooftopPV_short_anchor_20260630165755,2201.5144,6742.6143,0.4064,0.7494,"full run; early stopped at epoch 7; fully archived to NAS"
+HK Rooftop PV Short,no_dcp,worst,ABLA_HKRooftopPV_short_no_dcp_20260630162532,2318.0217,7208.9961,0.4279,0.7135,"smoke 1-epoch result"
+HK Rooftop PV Short,no_pstg,worst,ABLA_HKRooftopPV_short_no_pstg_20260630163037,2351.2498,7212.2925,0.4340,0.7133,"smoke 1-epoch result"
+HK Rooftop PV Short,no_kfilm,worst,ABLA_HKRooftopPV_short_no_kfilm_20260630163440,2258.5046,6841.3506,0.4169,0.7420,"smoke 1-epoch result"

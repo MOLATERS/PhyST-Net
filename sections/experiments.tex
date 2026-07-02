@@ -85,11 +85,11 @@ SDWPF & Short & \textbf{126.30} & \textbf{200.86} & 164.12 & 244.59 & 223.18 & 3
 \subsection{Ablation Study on SDWPF Short-Term Forecasting}
 \label{sec:ablation}
 
-We conduct the ablation study on SDWPF short-term forecasting because it provides a representative diagnostic setting with rich spatial relations and an appropriate prediction length. The 134-turbine network exposes non-trivial cross-node dependencies, while the 3-day forecast horizon is long enough for spatial propagation and future meteorological drivers to affect the forecast, but not so long that the evaluation is dominated only by accumulated uncertainty. This setting therefore offers a focused stress test for adaptive patching, graph fusion, and exogenous conditioning.
+We conduct the ablation study on SDWPF short-term forecasting because it provides a representative diagnostic setting with rich spatial relations and an appropriate prediction length. The 134-turbine network exposes non-trivial cross-node dependencies, while the 3-day forecast horizon is long enough for spatial propagation and future meteorological drivers to affect the forecast, but not so long that the evaluation is dominated only by accumulated uncertainty. This setting therefore offers a focused stress test for adaptive patching, relational manifold modeling, and exogenous conditioning.
 
-Table~\ref{tab:ablation_sdwpf_short} reports the full model and four controlled variants using the current ablation logs. The anchor model is the full PhyST-Net configuration. The no-DCP variant removes the former dynamic continuous patching branch, corresponding to the ablation of the adaptive patching component. The no-fusion variant disables the latent fusion path. The no-PSTG variant removes the former spatio-temporal graph adapter, corresponding to the R-STMF pathway. The no-K-FiLM variant removes the former exogenous modulation branch, corresponding to the K-AMC conditioning pathway. We report MAE, RMSE, $R^2$, and the grid-assessment Lambda accuracy used by the operational evaluation script.
+Table~\ref{tab:ablation_sdwpf_short} reports the full model and four controlled variants using the current ablation logs. The anchor model is the full PhyST-Net configuration. The w/o AGSP variant removes the adaptive Gaussian-soft-windowed patching component. The w/o R-STMF gate variant disables the learnable recombination gate between the decomposed manifolds, while the w/o R-STMF propagation variant removes the relational spatio-temporal propagation pathway. The w/o K-AMC variant removes the KAN-enhanced adaptive meteorological conditioning branch. We report MAE, RMSE, $R^2$, and the grid-assessment Lambda accuracy used by the operational evaluation script.
 
-The anchor model obtains the lowest MAE and RMSE, with a Lambda accuracy of 90.8948\%, exceeding the 83.0\% short-term assessment threshold. Removing the adaptive patching branch increases RMSE by 1.25\% and slightly reduces Lambda accuracy. Removing only the fusion path produces a smaller RMSE degradation, suggesting that the backbone preserves part of the temporal signal even without explicit fusion. Removing the spatio-temporal graph adapter increases RMSE by 0.53\%, while removing the exogenous modulation branch produces the largest RMSE degradation of 2.33\% and the lowest Lambda accuracy among the variants. These results indicate that the short-term SDWPF task benefits most from future-exogenous conditioning, while adaptive patching and relational spatial propagation provide additional measurable gains.
+The anchor model obtains the lowest MAE and RMSE, with a Lambda accuracy of 90.8948\%, exceeding the 83.0\% short-term assessment threshold. Removing AGSP increases RMSE by 1.25\% and slightly reduces Lambda accuracy. Removing only the R-STMF recombination gate produces a smaller RMSE degradation, suggesting that the backbone preserves part of the temporal signal even without the explicit manifold gate. Removing R-STMF relational propagation increases RMSE by 0.53\%, while removing K-AMC produces the largest RMSE degradation of 2.33\% and the lowest Lambda accuracy among the variants. These results indicate that the short-term SDWPF task benefits most from future-exogenous conditioning, while adaptive patching and relational spatial propagation provide additional measurable gains.
 
 \begin{table}[!t]
 \caption{Ablation Study on SDWPF Short-Term Forecasting.}
@@ -100,19 +100,19 @@ The anchor model obtains the lowest MAE and RMSE, with a Lambda accuracy of 90.8
 \setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$R^2$} & \textbf{Lambda} & \textbf{$\Delta$RMSE} \\
+\textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{$R^2$} & \textbf{Lambda} & \textbf{\makecell{RMSE\\change}} \\
 \midrule
 PhyST-Net (anchor) & \textbf{123.139} & \textbf{201.834} & \textbf{0.7635} & \textbf{90.8948\%} & 0.00\% \\
-w/o DCP & 123.851 & 204.367 & 0.7576 & 90.7713\% & +1.25\% \\
-w/o fusion & 123.645 & 202.512 & 0.7619 & 90.8637\% & +0.34\% \\
-w/o PSTG & 124.188 & 202.898 & 0.7610 & 90.8184\% & +0.53\% \\
-w/o K-FiLM & 126.091 & 206.532 & 0.7524 & 90.5421\% & +2.33\% \\
+w/o AGSP & 123.851 & 204.367 & 0.7576 & 90.7713\% & +1.25\% \\
+w/o R-STMF gate & 123.645 & 202.512 & 0.7619 & 90.8637\% & +0.34\% \\
+w/o R-STMF propagation & 124.188 & 202.898 & 0.7610 & 90.8184\% & +0.53\% \\
+w/o K-AMC & 126.091 & 206.532 & 0.7524 & 90.5421\% & +2.33\% \\
 \bottomrule
 \end{tabular}
 \vspace{6pt}
 \begin{minipage}{0.98\linewidth}
 \scriptsize
-\textit{Notes:} DCP, PSTG, and K-FiLM are the historical implementation names corresponding to AGSP, R-STMF, and K-AMC, respectively. Lambda denotes the operational grid-assessment accuracy reported by the evaluation script.
+\textit{Notes:} AGSP, R-STMF, and K-AMC denote adaptive Gaussian-soft-windowed patching, relational spatio-temporal manifold fusion, and KAN-enhanced adaptive meteorological conditioning, respectively. Lambda denotes the operational grid-assessment accuracy reported by the evaluation script.
 \end{minipage}
 \end{table}
 
@@ -121,4 +121,4 @@ w/o K-FiLM & 126.091 & 206.532 & 0.7524 & 90.5421\% & +2.33\% \\
 
 The benchmark results show that PhyST-Net is strongest in short- and medium-horizon regimes, where future meteorological drivers and spatial propagation have sufficient time to influence the target trajectory. We therefore emphasize the operating regime aligned with the design of PhyST-Net: constrained graph forecasting under exogenous forcing.
 
-The current ablation evidence is task-specific. It demonstrates that adaptive patching, fusion, relational graph propagation, and exogenous modulation improve SDWPF short-term forecasting, complementing the cross-dataset main comparison on SDWPF, HoT, and Kelmarsh.
+The current ablation evidence is task-specific. It demonstrates that adaptive patching, relational manifold modeling, relational graph propagation, and exogenous modulation improve SDWPF short-term forecasting, complementing the cross-dataset main comparison on SDWPF, HoT, and Kelmarsh.

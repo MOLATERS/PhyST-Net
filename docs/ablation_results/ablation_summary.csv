@@ -1,0 +1,10 @@
+module,dataset,full_model_mae,no_module_mae,mae_increase,impact_rank,conclusion
+AGSP (DCP),ASHRAE,50.15,52.90,+5.5%,2,去除后误差上升，影响中等
+AGSP (DCP),HK PV,2201.51,2318.02,+5.3%,2,去除后误差上升，影响中等
+AGSP (DCP),SDWPF,123.14,123.85,+0.6%,3,去除后误差几乎不变，影响较小
+K-AMC (kfilm),ASHRAE,50.15,55.28,+10.2%,1,去除后误差显著上升，影响最大
+K-AMC (kfilm),HK PV,2201.51,2258.50,+2.6%,1,去除后误差上升，影响最大
+K-AMC (kfilm),SDWPF,123.14,126.09,+2.4%,1,去除后误差上升，影响最大
+R-STMF (PSTG),ASHRAE,50.15,58.29,+16.2%,1,去除后误差显著上升，影响最大
+R-STMF (PSTG),HK PV,2201.51,2351.25,+6.8%,3,去除后误差上升，影响中等
+R-STMF (PSTG),SDWPF,123.14,124.19,+0.9%,4,去除后误差几乎不变，影响最小
