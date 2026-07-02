@@ -1,3 +1,21 @@
 \section{Discussion}
 \label{sec:discussion}
-% TODO: In-depth discussion of results, computational efficiency, and limitations will be added here.
+
+This section discusses the implications of our results, focuses on the scalability of the proposed framework, and analyzes its generalization capabilities across diverse industrial network environments.
+
+\subsection{Domain Generalization across Industrial Networks}
+The experimental results demonstrate that PhyST-Net is robust across different domains, ranging from wind generation (SDWPF, HoT, Kelmarsh) to solar generation (NREL Solar) and electrical load forecasting. This domain-independent behavior stems from the modular separation between spatial routing, non-linear exogenous modulation, and physical decoding. 
+Specifically, in generation-side forecasting (wind and solar), the physical constraints primarily restrict output within $[0, P_n]$, preventing unphysical negative generation and mechanical overload predictions. In demand-side forecasting (load), the constraint head enforces non-negativity and dynamically tracks historical peaking envelopes. K-AMC effectively models weather-driven factors (e.g., wind speed, solar irradiance, temperature) by using B-spline KAN parameterization, bypassing standard multi-layer perceptron (MLP) limitations in localizing high-frequency exogenous shifts.
+
+\subsection{Computational Complexity and Scalability}
+A key barrier in deploying spatio-temporal graph Transformers on large-scale industrial networks is the computational cost, which conventionally scales quadratically with both the number of network nodes $N$ and the sequence length $T$. PhyST-Net addresses these limits through two design features:
+\begin{itemize}
+    \item \textbf{Linear Spatial Routing:} R-STMF utilizes a global token as an information sink. Instead of computing direct node-to-node attention with $O(N^2)$ complexity, R-STMF employs cross-attention between local node representations and the global token. This reduces spatial interaction complexity to $O(N)$ per layer, enabling scalability to large networks like SDWPF ($N=134$).
+    \item \textbf{Continuous Tokenization:} AGSP aggregates raw temporal steps into continuous patches. This tokenization reduces the effective temporal sequence length from $T$ to $T/P$, where $P$ is the window stride, leading to significant savings in the downstream temporal Transformer layers.
+\end{itemize}
+
+\subsection{Gradient Flow under Domain Constraints}
+Traditional methods enforce operational envelopes via post-hoc hard clipping, i.e., $\hat{Y} = \max(0, \min(P_n, Y_{raw}))$. While simple, hard clipping zeroes out gradients for out-of-bounds predictions, causing gradient vanishing during backpropagation and hindering the learning of extreme events. In contrast, the Physics-Informed Dynamic Capping Head (PI-DCH) implements a differentiable barrier gate. By employing a double-sigmoid soft truncation, PI-DCH keeps gradient paths active even when predictions approach or exceed physical limits. This ensures that the model receives continuous feedback during training, optimizing predictive accuracy in near-capacity operational regimes.
+
+\subsection{Limitations and Future Work}
+While PhyST-Net provides a unified framework for constrained forecasting, certain limitations remain. First, the graph structure in R-STMF is currently static. In real-world industrial networks, topology can change dynamically due to transmission line maintenance or sensor failures. Extending R-STMF to dynamic graphs represents an important research direction. Second, the current formulation is deterministic. Providing calibrated probabilistic interval forecasts under physical constraints would further improve operational decision-making.

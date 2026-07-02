@@ -1,3 +1,30 @@
 \section{Case Studies}
 \label{sec:case_studies}
-% TODO: Visualizations of attention maps, dynamic constraint clipping, and specific forecasting cases will be added here.
+
+This section provides qualitative analysis through four distinct case studies to illustrate how the individual components of PhyST-Net address specific operational challenges in industrial network forecasting.
+
+\begin{figure*}[!t]
+\centering
+\subfloat[Case A: Upper Capping]{\rule{0.23\textwidth}{0.18\textwidth}\label{fig:case_a}} \hfil
+\subfloat[Case B: Spatial Propagation]{\rule{0.23\textwidth}{0.18\textwidth}\label{fig:case_b}} \hfil
+\subfloat[Case C: Exogenous Correction]{\rule{0.23\textwidth}{0.18\textwidth}\label{fig:case_c}} \hfil
+\subfloat[Case D: Lower Bound Safeguard]{\rule{0.23\textwidth}{0.18\textwidth}\label{fig:case_d}}
+\caption{Visualization of qualitative case studies demonstrating the effectiveness of PhyST-Net modules in diverse operational scenarios. (a) PI-DCH prevents over-capacity predictions ($>1.0$) during extreme weather events. (b) R-STMF tracks spatial attention delay as meteorological fronts propagate across nodes. (c) K-AMC B-splines learn non-linear local environmental corrections. (d) PI-DCH enforces a strict non-negativity constraint in low-speed/night regimes.}
+\label{fig:case_studies_multi}
+\end{figure*}
+
+\subsection{Case A: Differentiable Upper Capping under Extreme Meteorological Events}
+In industrial generation networks, such as wind farms or solar PV fields, extreme weather events (e.g., storms or peak solar noon) can drive predictions beyond the physical capacity of the system.
+As illustrated in Fig.~\ref{fig:case_a}, under high wind-speed conditions on the HoT dataset, standard Transformer backbones produce active power predictions that exceed the rated capacity (normalized power $>1.0$). If a post-hoc hard clip is applied to enforce the upper limit, the gradient becomes zero, which restricts learning. In contrast, the PI-DCH module employs a differentiable barrier gate that smoothly caps predictions at $1.0$. This soft capping mechanism preserves the gradient flow throughout training, enabling the network to learn optimal weights even in near-saturation regimes.
+
+\subsection{Case B: Spatio-Temporal Propagation and Advection Delay}
+Physical phenomena propagating across industrial networks (e.g., wind front advection in wind farms or cloud movement over distributed solar networks) exhibit clear spatio-temporal phase lags.
+Fig.~\ref{fig:case_b} visualizes the spatial attention weights computed by the R-STMF adapter across the SDWPF turbine network. During a meteorological front event, R-STMF dynamically shifts attention from upstream nodes to downstream nodes in accordance with the wind speed and direction. By utilizing the global token as an intermediate information sink, the model captures this network-wide propagation lag without incurring the quadratic computational cost of full pairwise spatial attention.
+
+\subsection{Case C: Non-linear Exogenous Correction for Topographical Effects}
+Industrial networks are frequently deployed in complex terrains where local micro-climates or topographical shadows (e.g., turbine wake shadows or solar panel tilt occlusions) lead to non-linear deviations from regional forecasts.
+Fig.~\ref{fig:case_c} depicts the conditioning scaling factor learned by the K-AMC module relative to numerical weather prediction (NWP) inputs on the Kelmarsh dataset. Unlike standard linear or MLP-based modulation schemes that perform uniform scaling, K-AMC utilizes B-spline parameterization to learn highly localized, piece-wise non-linear correction curves. This allows the model to adjust predictions for specific wind speed ranges where terrain-induced turbulence is most prominent.
+
+\subsection{Case D: Zero-Generation Safeguard during Low-Operational States}
+At the lower bound of operations, industrial generators do not produce power (e.g., wind turbines below the cut-in wind speed, or solar panels at night). autocovariance fluctuations in standard mean-squared error (MSE) backbones often cause models to predict unphysical negative power values.
+As shown in Fig.~\ref{fig:case_d}, during low wind-speed intervals on the SDWPF dataset, the baseline model outputs negative generation values (down to $-2\%$). While small, these negative predictions accumulate across large networks and violate physical laws. PI-DCH resolves this by enforcing a differentiable lower-bound barrier. This caps the prediction at exactly $0.0$ while ensuring that the backpropagated gradient remains informative, preventing negative power leakage without destabilizing training.
